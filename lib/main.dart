@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'pages/homepage.dart';
 
 void main() {
@@ -34,6 +34,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Budget Guru'),
+      builder: EasyLoading.init(),
     );
   }
 }

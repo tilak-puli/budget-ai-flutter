@@ -1,11 +1,11 @@
-import 'dart:math';
-
+import 'package:budget_ai/api.dart';
 import 'package:budget_ai/components/expense_list.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -19,8 +19,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late Future<Expenses> futureExpenses;
 
   Future<Expenses> fetchExpenses() async {
-    final response =
-        await http.get(Uri.parse('http://localhost:3000/expenses'));
+    final response = await ApiService().fetchExpenses();
 
     if (response.statusCode == 200) {
       return Expenses.fromJson(jsonDecode(response.body) as List<dynamic>);
@@ -30,12 +29,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Expense> postExpense(userMessage) async {
-    final response =
-        await http.post(Uri.parse('http://localhost:3000/ai/expense'),
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: json.encode(<String, String>{"userMessage": userMessage}));
+    final response = await ApiService().addExpense(userMessage);
 
     if (response.statusCode == 200) {
       return Expense.fromJson(jsonDecode(response.body));
@@ -56,9 +50,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Expense> addExpense(userMessage) async {
+    EasyLoading.show(status: 'loading...');
     var expense = await postExpense(userMessage);
 
     refreshExpenses();
+    EasyLoading.dismiss();
 
     return expense;
   }
