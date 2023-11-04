@@ -34,9 +34,10 @@ class ExpensesListBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Column(
+      child: SingleChildScrollView(
+          child: Column(
         children: expenses.list.map((expense) => ExpenseCard(expense)).toList(),
-      ),
+      )),
     );
   }
 }

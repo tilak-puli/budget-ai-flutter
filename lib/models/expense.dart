@@ -8,6 +8,6 @@ class Expense {
 
   factory Expense.fromJson(json) {
     return Expense(json['amount'] as int, json['category'] as String,
-        json['notes'] as String, DateTime.now());
+        json['description'] as String, DateTime.now());
   }
 }

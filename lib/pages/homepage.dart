@@ -38,7 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
             body: json.encode(<String, String>{"userMessage": userMessage}));
 
     if (response.statusCode == 200) {
-      return Expense.fromJson(jsonDecode(response.body) );
+      return Expense.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to load expenses');
     }
@@ -50,12 +50,15 @@ class _MyHomePageState extends State<MyHomePage> {
     refreshExpenses();
   }
 
-  Future<Expenses> refreshExpenses() => futureExpenses = fetchExpenses();
+  void refreshExpenses() {
+    setState(() => {});
+    futureExpenses = fetchExpenses();
+  }
 
   Future<Expense> addExpense(userMessage) async {
     var expense = await postExpense(userMessage);
 
-    await refreshExpenses();
+    refreshExpenses();
 
     return expense;
   }
@@ -123,8 +126,9 @@ class _AIMessageInputState extends State<AIMessageInput> {
       height: 50,
       child: TextField(
         controller: _controller,
-        onSubmitted: (value) {
-          widget.addExpense(value);
+        onSubmitted: (value) async {
+          await widget.addExpense(value);
+          _controller.clear();
         },
         decoration: const InputDecoration(
           border: OutlineInputBorder(),
