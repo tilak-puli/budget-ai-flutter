@@ -1,11 +1,15 @@
 import 'package:budget_ai/api.dart';
+import 'package:budget_ai/components/AI_message_input.dart';
 import 'package:budget_ai/components/expense_list.dart';
+import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+
+var todayDate = DateTime.now();
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -17,9 +21,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late Future<Expenses> futureExpenses;
+  DateTime fromDate = getMonthStart(todayDate);
+  DateTime toDate = getMonthEnd(todayDate);
 
   Future<Expenses> fetchExpenses() async {
-    final response = await ApiService().fetchExpenses();
+    final response = await ApiService().fetchExpenses(fromDate, toDate);
 
     if (response.statusCode == 200) {
       return Expenses.fromJson(jsonDecode(response.body) as List<dynamic>);
@@ -49,6 +55,14 @@ class _MyHomePageState extends State<MyHomePage> {
     futureExpenses = fetchExpenses();
   }
 
+  Future<void> updateTimeFrame(newFromDate, newToDate) async {
+    setState(() {
+      fromDate = newFromDate;
+      toDate = newToDate;
+    });
+    refreshExpenses();
+  }
+
   Future<Expense> addExpense(userMessage) async {
     EasyLoading.show(status: 'loading...');
     var expense = await postExpense(userMessage);
@@ -63,12 +77,14 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         title: Text(widget.title),
+        leading: LeadingActions(fromDate, toDate, updateTimeFrame),
       ),
       body: Center(
-        child: Column(
-          children: [
+        child: Expanded(
+          child: Column(children: [
             FutureBuilder<Expenses>(
               future: futureExpenses,
               builder: (context, snapshot) {
@@ -78,57 +94,18 @@ class _MyHomePageState extends State<MyHomePage> {
                   return Text('${snapshot.error}');
                 }
 
-                return const CircularProgressIndicator();
+                return const Expanded(
+                    child: Center(child: CircularProgressIndicator()));
               },
             ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: AIMessageInput(addExpense),
+            Positioned(
+              bottom: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: AIMessageInput(addExpense),
+              ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class AIMessageInput extends StatefulWidget {
-  final Future<Expense> Function(dynamic userMessage) addExpense;
-
-  const AIMessageInput(this.addExpense, {super.key});
-
-  @override
-  State<AIMessageInput> createState() => _AIMessageInputState();
-}
-
-class _AIMessageInputState extends State<AIMessageInput> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 50,
-      child: TextField(
-        controller: _controller,
-        onSubmitted: (value) async {
-          await widget.addExpense(value);
-          _controller.clear();
-        },
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          hintText: 'What\'s the expense?',
+          ]),
         ),
       ),
     );
