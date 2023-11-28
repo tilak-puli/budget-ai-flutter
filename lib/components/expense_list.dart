@@ -13,8 +13,7 @@ class ExpenseList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 450,
+    return Expanded(
       child: expenses.isEmpty
           ? const NoExpensesMessage()
           : ExpensesListBody(expenses),
@@ -32,13 +31,10 @@ class ExpensesListBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: SingleChildScrollView(
-          child: Column(
-        children: expenses.list.map((expense) => ExpenseCard(expense)).toList(),
-      )),
-    );
+    return SingleChildScrollView(
+        child: Column(
+      children: expenses.list.map((expense) => ExpenseCard(expense)).toList(),
+    ));
   }
 }
 

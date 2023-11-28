@@ -1,5 +1,6 @@
 import 'package:budget_ai/api.dart';
 import 'package:budget_ai/components/AI_message_input.dart';
+import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/expense_list.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
@@ -82,30 +83,36 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
         leading: LeadingActions(fromDate, toDate, updateTimeFrame),
       ),
-      body: Center(
-        child: Expanded(
-          child: Column(children: [
-            FutureBuilder<Expenses>(
-              future: futureExpenses,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return ExpenseList(snapshot.data!);
-                } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
-                }
-
-                return const Expanded(
-                    child: Center(child: CircularProgressIndicator()));
-              },
-            ),
-            Positioned(
-              bottom: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Center(
+          child: Expanded(
+            child: Column(children: [
+              Expanded(
+                child: FutureBuilder<Expenses>(
+                  future: futureExpenses,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Column(
+                        children: [
+                          BudgetStatus(snapshot.data!),
+                          ExpenseList(snapshot.data!),
+                        ],
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('${snapshot.error}');
+                    }
+                        
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                ),
+              ),
+              Positioned(
+                bottom: 20,
                 child: AIMessageInput(addExpense),
               ),
-            ),
-          ]),
+            ]),
+          ),
         ),
       ),
     );

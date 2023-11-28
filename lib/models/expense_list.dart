@@ -10,4 +10,6 @@ class Expenses {
   }
 
   get isEmpty => list.isEmpty;
+
+  get total => list.map((e) => e.amount).reduce((value, amount) => value + amount);
 }
