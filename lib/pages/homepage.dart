@@ -1,7 +1,7 @@
 import 'package:budget_ai/api.dart';
 import 'package:budget_ai/components/AI_message_input.dart';
+import 'package:budget_ai/components/body_tabs.dart';
 import 'package:budget_ai/components/budget_status.dart';
-import 'package:budget_ai/components/expense_list.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
@@ -96,13 +96,13 @@ class _MyHomePageState extends State<MyHomePage> {
                       return Column(
                         children: [
                           BudgetStatus(snapshot.data!),
-                          ExpenseList(snapshot.data!),
+                          BodyTabs(snapshot.data!),
                         ],
                       );
                     } else if (snapshot.hasError) {
                       return Text('${snapshot.error}');
                     }
-                        
+
                     return const Center(child: CircularProgressIndicator());
                   },
                 ),

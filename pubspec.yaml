@@ -39,6 +39,8 @@ dependencies:
   month_year_picker: ^0.3.0+1
   flutter_localizations:
     sdk: flutter
+  collection: ^1.18.0
+  syncfusion_flutter_charts: ^23.2.6
   
 
 dev_dependencies:

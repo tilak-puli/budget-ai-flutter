@@ -1,5 +1,4 @@
 import 'package:budget_ai/components/expense_card.dart';
-import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:flutter/material.dart';
 
@@ -31,10 +30,17 @@ class ExpensesListBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-        child: Column(
-      children: expenses.list.map((expense) => ExpenseCard(expense)).toList(),
-    ));
+    List<Widget> transactions = [];
+
+    expenses.groupByTime.forEach((k, v) {
+      transactions.add(const SizedBox(height: 10));
+      transactions.add(Center(child: Text(k)));
+      v.forEach((expense) => transactions.add(ExpenseCard(expense)));
+    });
+
+    return Expanded(
+      child: ListView(children: transactions),
+    );
   }
 }
 

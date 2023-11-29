@@ -1,4 +1,5 @@
 import 'package:budget_ai/models/expense.dart';
+import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseCard extends StatelessWidget {
@@ -11,35 +12,15 @@ class ExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(children: [
-          Row(
-            children: [
-              Text(expense.datetime.toString().split('.')[0]),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                expense.description.toString(),
-                style: const TextStyle(fontSize: 18),
-              ),
-              Text(
-                expense.amount.toString(),
-                style: const TextStyle(color: Colors.redAccent, fontSize: 18),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Text(expense.category),
-            ],
-          ),
-        ]),
+    return ListTile(
+      leading: const Icon(Icons.map),
+      title: Text(
+        expense.description.toString(),
+        style: const TextStyle(fontSize: 18),
+      ),
+      trailing: Text(
+        currencyFormat.format(expense.amount),
+        style: const TextStyle(fontSize: 18),
       ),
     );
   }
