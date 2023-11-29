@@ -5,10 +5,12 @@ import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/state/expense_model.dart';
 import 'package:budget_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:provider/provider.dart';
 
 var todayDate = DateTime.now();
 
@@ -22,15 +24,23 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late Future<Expenses> futureExpenses;
+  late ExpenseStore expenseStore;
   DateTime fromDate = getMonthStart(todayDate);
   DateTime toDate = getMonthEnd(todayDate);
 
   Future<Expenses> fetchExpenses() async {
+    expenseStore.loading = true;
     final response = await ApiService().fetchExpenses(fromDate, toDate);
 
     if (response.statusCode == 200) {
-      return Expenses.fromJson(jsonDecode(response.body) as List<dynamic>);
+      var expenses =
+          Expenses.fromJson(jsonDecode(response.body) as List<dynamic>);
+      expenseStore.loading = false;
+
+      expenseStore.setExpenses(expenses);
+      return expenses;
     } else {
+      expenseStore.loading = false;
       throw Exception('Failed to load expenses');
     }
   }
@@ -48,7 +58,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    refreshExpenses();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      refreshExpenses();
+    });
   }
 
   void refreshExpenses() {
@@ -76,6 +88,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    expenseStore = Provider.of<ExpenseStore>(context, listen: true);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -89,24 +103,14 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Expanded(
             child: Column(children: [
               Expanded(
-                child: FutureBuilder<Expenses>(
-                  future: futureExpenses,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Column(
-                        children: [
-                          BudgetStatus(snapshot.data!),
-                          BodyTabs(snapshot.data!),
-                        ],
-                      );
-                    } else if (snapshot.hasError) {
-                      return Text('${snapshot.error}');
-                    }
-
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                ),
-              ),
+                  child: expenseStore.loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : const Column(
+                          children: [
+                            BudgetStatus(),
+                            BodyTabs(),
+                          ],
+                        )),
               Positioned(
                 bottom: 20,
                 child: AIMessageInput(addExpense),

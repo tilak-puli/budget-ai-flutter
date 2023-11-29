@@ -1,13 +1,12 @@
 import 'package:budget_ai/components/categories.dart';
 import 'package:budget_ai/components/expense_list.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/state/expense_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class BodyTabs extends StatefulWidget {
-  final Expenses expenses;
-
-  const BodyTabs(
-    this.expenses, {
+  const BodyTabs({
     super.key,
   });
 
@@ -48,13 +47,16 @@ class _BodyTabsState extends State<BodyTabs> with TickerProviderStateMixin {
             ],
           ),
           Expanded(
-            child: TabBarView(
-              controller: _nestedTabController,
-              children: [
-                ExpenseList(widget.expenses),
-                Categories(widget.expenses),
-              ],
-            ),
+            child:
+                Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
+              return TabBarView(
+                controller: _nestedTabController,
+                children: [
+                  ExpenseList(expenseStore),
+                  Categories(expenseStore.expenses),
+                ],
+              );
+            }),
           )
         ],
       ),

@@ -27,9 +27,9 @@ class LeadingActions extends StatelessWidget {
           onTap: () async {
             final selected = await showMonthYearPicker(
               context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(todayDate.year - 3),
-              lastDate: DateTime(todayDate.year + 3),
+              initialDate: today,
+              firstDate: allowedStartDateTime,
+              lastDate: allowedToDateTime,
             );
 
             if (selected != null) {

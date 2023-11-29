@@ -1,30 +1,31 @@
 import 'package:budget_ai/components/expense_card.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/state/expense_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ExpenseList extends StatelessWidget {
-  final Expenses expenses;
+  final ExpenseStore expenseStore;
 
-  const ExpenseList(
-    this.expenses, {
+  const ExpenseList(this.expenseStore, {
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: expenses.isEmpty
-          ? const NoExpensesMessage()
-          : ExpensesListBody(expenses),
-    );
+        child: expenseStore.expenses.isEmpty
+            ? const NoExpensesMessage()
+            : ExpensesListBody(expenseStore),
+      );
   }
 }
 
 class ExpensesListBody extends StatelessWidget {
-  final Expenses expenses;
+  final ExpenseStore expenseStore;
 
-  const ExpensesListBody(
-    this.expenses, {
+
+  const ExpensesListBody(this.expenseStore,  {
     super.key,
   });
 
@@ -32,7 +33,7 @@ class ExpensesListBody extends StatelessWidget {
   Widget build(BuildContext context) {
     List<Widget> transactions = [];
 
-    expenses.groupByTime.forEach((k, v) {
+    expenseStore.expenses.groupByTime.forEach((k, v) {
       transactions.add(const SizedBox(height: 10));
       transactions.add(Center(child: Text(k)));
       v.forEach((expense) => transactions.add(ExpenseCard(expense)));

@@ -1,4 +1,3 @@
-
 DateTime getMonthStart(DateTime date) {
   return  DateTime(date.year, date.month, 1);
 }
@@ -7,3 +6,8 @@ DateTime getMonthStart(DateTime date) {
 DateTime getMonthEnd(DateTime date) {
   return DateTime(date.year, date.month + 1, 0);
 }
+
+var today = DateTime.now();
+
+var allowedStartDateTime = DateTime(2022);
+var allowedToDateTime = DateTime(today.year + 1);

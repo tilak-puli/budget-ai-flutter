@@ -36,4 +36,16 @@ class Expenses {
         date.month == other.month &&
         date.day == other.day;
   }
+
+  void remove(id) {
+    list.removeWhere((element) => element.id == id);
+  }
+
+  void update(String id, Expense newExpense) {
+    var index = list.indexWhere((element) => element.id == id);
+
+    if(index != -1) {
+      list[index] = newExpense;
+    }
+  }
 }
