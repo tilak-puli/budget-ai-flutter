@@ -2,18 +2,17 @@ import 'package:budget_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
-import 'dart:developer';
 
 var monthFormat = DateFormat("MMM");
 var monthAndYearFormat = DateFormat("MMM y");
 var todayDate = DateTime.now();
 
 class LeadingActions extends StatelessWidget {
-  DateTime fromDate;
-  DateTime toDate;
-  void Function(dynamic newFromDate, dynamic newToDate) updateTimeFrame;
+  final DateTime fromDate;
+  final DateTime toDate;
+  final void Function(dynamic newFromDate, dynamic newToDate) updateTimeFrame;
 
-  LeadingActions(
+  const LeadingActions(
     this.fromDate,
     this.toDate,
     this.updateTimeFrame, {

@@ -1,5 +1,4 @@
 import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/pages/homepage.dart';
 import 'package:flutter/material.dart';
 
 class AIMessageInput extends StatefulWidget {

@@ -1,7 +1,6 @@
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class BudgetStatus extends StatelessWidget {
   final Expenses expenses;
