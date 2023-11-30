@@ -61,8 +61,10 @@ class ExpenseCard extends StatelessWidget {
 class ExpenseDailog extends StatelessWidget {
   final ExpenseStore expenseStore;
   final Expense expense;
+  
+  late BuildContext context;
 
-  const ExpenseDailog(
+  ExpenseDailog(
     this.expense,
     this.expenseStore, {
     super.key,
@@ -93,12 +95,14 @@ class ExpenseDailog extends StatelessWidget {
     }
 
     expenseStore.updateExpense(expense.id, newExpense);
-
     EasyLoading.dismiss();
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    this.context = context;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,

@@ -12,5 +12,5 @@ class Expense {
         json['description'] as String, DateTime.parse(json['date']));
   }
 
-  toJson() => {'_id': id, 'amount': amount, "description": description, 'date': datetime.toIso8601String()};
+  toJson() => {'_id': id, 'amount': amount, "description": description,  "category": category, 'date': datetime.toIso8601String()};
 }
