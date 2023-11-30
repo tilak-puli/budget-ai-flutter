@@ -2,7 +2,7 @@ import 'package:budget_ai/models/expense.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const host = "localhost:3001";
+const host = "localhost:3000";
 
 class ApiService {
   Future<http.Response> fetchExpenses(

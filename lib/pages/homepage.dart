@@ -5,7 +5,7 @@ import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
-import 'package:budget_ai/state/expense_model.dart';
+import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';

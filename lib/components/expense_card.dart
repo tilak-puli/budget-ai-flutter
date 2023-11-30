@@ -1,7 +1,7 @@
 import 'package:budget_ai/api.dart';
 import 'package:budget_ai/components/expense_form.dart';
 import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/state/expense_model.dart';
+import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';

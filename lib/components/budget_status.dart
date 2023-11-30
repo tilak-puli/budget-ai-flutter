@@ -1,5 +1,5 @@
 import 'package:budget_ai/models/expense_list.dart';
-import 'package:budget_ai/state/expense_model.dart';
+import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
