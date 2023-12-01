@@ -12,8 +12,7 @@ class Expenses {
 
   get isEmpty => list.isEmpty;
 
-  get total =>
-      list.map((e) => e.amount).reduce((value, amount) => value + amount);
+  get total => list.map((e) => e.amount).sum;
 
   get groupByTime => groupBy(list, (expense) => getTimeTag(expense.datetime));
   

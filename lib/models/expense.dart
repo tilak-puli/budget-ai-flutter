@@ -9,8 +9,8 @@ class Expense {
 
   factory Expense.fromJson(json) {
     return Expense(json['_id'] as String, json['amount'] as int, json['category'] as String,
-        json['description'] as String, DateTime.parse(json['date']));
+        json['description'] as String, DateTime.parse(json['date']).toLocal());
   }
 
-  toJson() => {'_id': id, 'amount': amount, "description": description,  "category": category, 'date': datetime.toIso8601String()};
+  toJson() => {'_id': id, 'amount': amount, "description": description,  "category": category, 'date': datetime.toUtc().toIso8601String()};
 }

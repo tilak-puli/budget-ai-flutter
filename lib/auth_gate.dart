@@ -2,7 +2,7 @@ import 'package:budget_ai/pages/homepage.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide PhoneAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
-import 'home.dart';
+import 'app.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -20,7 +20,7 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        return const MyHomePage(title: 'Budget Guru');
+        return const MyHomePage(title: 'FinGet');
       },
     );
   }

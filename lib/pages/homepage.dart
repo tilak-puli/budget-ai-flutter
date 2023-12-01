@@ -7,6 +7,7 @@ import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/time.dart';
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -96,6 +97,29 @@ class _MyHomePageState extends State<MyHomePage> {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         title: Text(widget.title),
         leading: LeadingActions(fromDate, toDate, updateTimeFrame),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<ProfileScreen>(
+                  builder: (context) => ProfileScreen(
+                    appBar: AppBar(
+                      title: const Text('User Profile'),
+                    ),
+                    actions: [
+                      SignedOutAction((context) {
+                        Navigator.of(context).pop();
+                      })
+                    ],
+                  ),
+                ),
+              );
+            },
+          )
+        ],
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),

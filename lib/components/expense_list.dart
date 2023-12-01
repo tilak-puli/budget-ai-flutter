@@ -56,7 +56,7 @@ class NoExpensesMessage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'No expenses to show.\n Just message the guru to start the journey.',
+          'No expenses to show.\n Just message the AI to start your budgeting journey.',
           textAlign: TextAlign.center,
         ),
       ],

@@ -1,4 +1,4 @@
-import 'package:budget_ai/home.dart';
+import 'package:budget_ai/app.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
