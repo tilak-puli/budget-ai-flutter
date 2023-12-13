@@ -21,7 +21,7 @@ class _BodyTabsState extends State<BodyTabs> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    _nestedTabController = TabController(length: 5, vsync: this);
+    _nestedTabController = TabController(length: 2, vsync: this);
   }
 
   @override
