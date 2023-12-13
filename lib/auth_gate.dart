@@ -11,13 +11,13 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // if (!snapshot.hasData) {
-        //   return SignInScreen(
-        //     providers: [
-        //       PhoneAuthProvider()
-        //     ],
-        //   );
-        // }
+        if (!snapshot.hasData) {
+          return SignInScreen(
+            providers: [
+              PhoneAuthProvider()
+            ],
+          );
+        }
 
         return const MyHomePage(title: 'FinGet');
       },

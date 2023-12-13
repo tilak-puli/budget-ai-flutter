@@ -30,6 +30,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 50,
+      width: MediaQuery.of(context).size.width - 20,
       child: TextField(
         controller: _controller,
         onSubmitted: (value) async {

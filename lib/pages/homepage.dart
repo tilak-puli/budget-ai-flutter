@@ -124,23 +124,20 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Center(
-          child: Expanded(
-            child: Column(children: [
-              Expanded(
-                  child: expenseStore.loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : const Column(
-                          children: [
-                            BudgetStatus(),
-                            BodyTabs(),
-                          ],
-                        )),
-              Positioned(
-                bottom: 20,
-                child: AIMessageInput(addExpense),
-              ),
-            ]),
-          ),
+          child: Stack(children: [
+            expenseStore.loading
+                ? const Center(child: CircularProgressIndicator())
+                : const Column(
+                    children: [
+                      BudgetStatus(),
+                      BodyTabs(),
+                    ],
+                  ),
+            Positioned(
+              bottom: 20,
+              child: AIMessageInput(addExpense),
+            ),
+          ]),
         ),
       ),
     );
