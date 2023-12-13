@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.budgetAi.RunnerTests</string>
+	<string>com.tilakpuli.budgetAi.RunnerTests</string>
 	<key>PROJECT_ID</key>
 	<string>finbud-99269</string>
 	<key>STORAGE_BUCKET</key>

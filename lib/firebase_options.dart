@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '706321535461',
     projectId: 'finbud-99269',
     storageBucket: 'finbud-99269.appspot.com',
-    iosBundleId: 'com.example.budgetAi',
+    iosBundleId: 'com.tilakpuli.budgetAi',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,6 +76,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '706321535461',
     projectId: 'finbud-99269',
     storageBucket: 'finbud-99269.appspot.com',
-    iosBundleId: 'com.example.budgetAi.RunnerTests',
+    iosBundleId: 'com.tilakpuli.budgetAi.RunnerTests',
   );
 }
