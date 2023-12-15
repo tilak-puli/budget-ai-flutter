@@ -1,6 +1,5 @@
 import 'package:budget_ai/components/categories.dart';
 import 'package:budget_ai/components/expense_list.dart';
-import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -33,33 +32,31 @@ class _BodyTabsState extends State<BodyTabs> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          TabBar(
-            controller: _nestedTabController,
-            tabs: const [
-              Tab(
-                text: "Transactions",
-              ),
-              Tab(
-                text: "Categories",
-              ),
-            ],
-          ),
-          Expanded(
-            child:
-                Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
-              return TabBarView(
+        child: Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
+      return expenseStore.expenses.isEmpty
+          ? const Center(child: NoExpensesMessage())
+          : Column(children: [
+              TabBar(
                 controller: _nestedTabController,
-                children: [
-                  ExpenseList(expenseStore),
-                  Categories(expenseStore.expenses),
+                tabs: const [
+                  Tab(
+                    text: "Transactions",
+                  ),
+                  Tab(
+                    text: "Categories",
+                  ),
                 ],
-              );
-            }),
-          )
-        ],
-      ),
-    );
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _nestedTabController,
+                  children: [
+                    ExpenseList(expenseStore),
+                    Categories(expenseStore.expenses),
+                  ],
+                ),
+              )
+            ]);
+    }));
   }
 }

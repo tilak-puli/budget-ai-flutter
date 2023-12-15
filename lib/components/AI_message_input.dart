@@ -10,7 +10,6 @@ class AIMessageInput extends StatefulWidget {
   State<AIMessageInput> createState() => _AIMessageInputState();
 }
 
-
 class _AIMessageInputState extends State<AIMessageInput> {
   late TextEditingController _controller;
 
@@ -32,6 +31,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
       height: 50,
       width: MediaQuery.of(context).size.width - 20,
       child: TextField(
+        autofocus: true,
         controller: _controller,
         onSubmitted: (value) async {
           await widget.addExpense(value);
@@ -40,6 +40,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
         decoration: const InputDecoration(
           border: OutlineInputBorder(),
           hintText: 'What\'s the expense?',
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );

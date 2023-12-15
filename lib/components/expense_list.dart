@@ -13,11 +13,7 @@ class ExpenseList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(
-            child: expenseStore.expenses.isEmpty
-                ? const NoExpensesMessage()
-                : ExpensesListBody(expenseStore),
-          ),
+        Expanded(child: ExpensesListBody(expenseStore)),
       ],
     );
   }
