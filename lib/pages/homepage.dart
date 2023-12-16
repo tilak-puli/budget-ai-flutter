@@ -41,7 +41,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
       expenseStore.setExpenses(expenses);
 
-
       chatStore.clear();
 
       for (var expense in expenses.list) {
@@ -56,13 +55,16 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<Expense> postExpense(userMessage) async {
+  Future<Object> postExpense(userMessage) async {
     final response = await ApiService().addExpense(userMessage);
 
     if (response.statusCode == 200) {
       return Expense.fromJson(jsonDecode(response.body));
+    } else if (response.statusCode == 401) {
+      return jsonDecode(response.body)["errorMessage"] ??
+          "Something went wrong while adding";
     } else {
-      throw Exception('Failed to load expenses');
+      throw Exception('Failed to add expense');
     }
   }
 
@@ -91,15 +93,22 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<Expense?> addExpense(userMessage) async {
     // EasyLoading.show(status: 'loading...');
     try {
-      chatStore.history.addAtStart(TextMessage(true, userMessage));
+      chatStore.addAtStart(TextMessage(true, userMessage));
       var expense = await postExpense(userMessage);
 
-      refreshExpenses(showLoading: false);
       // EasyLoading.dismiss();
 
-      return expense;
+      if (expense is Expense) {
+        refreshExpenses(showLoading: false);
+
+        return expense;
+      }
+
+      chatStore.addAtStart(TextMessage(false, expense as String));
+      return null;
     } catch (e) {
-      chatStore.history.messages.removeLast();
+      chatStore.addAtStart(
+          TextMessage(false, "Something went wrong while trying to ask Finly"));
       return null;
     }
   }

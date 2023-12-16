@@ -14,6 +14,12 @@ class ChatStore extends ChangeNotifier{
   void clear() {
     history.messages.clear();
   }
+
+  void addAtStart(TextMessage textMessage) {
+    history.addAtStart(textMessage);
+
+    notifyListeners();
+  }
 }
 
 abstract class ChatMessage {
