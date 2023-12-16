@@ -92,7 +92,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _formKey.currentState!.save();
-                  var newExpense = Expense(widget.expense.id, amount, category, description, datetime);
+                  var newExpense = Expense(widget.expense.id, amount, category, description, datetime, widget.expense.prompt);
                   widget.updateExpense(newExpense);
                 }
               },

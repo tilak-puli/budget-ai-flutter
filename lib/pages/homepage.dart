@@ -1,16 +1,15 @@
 import 'package:budget_ai/api.dart';
-import 'package:budget_ai/components/ai_message_input.dart';
 import 'package:budget_ai/components/body_tabs.dart';
 import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/time.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
 
 var todayDate = DateTime.now();
@@ -26,11 +25,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late Future<Expenses> futureExpenses;
   late ExpenseStore expenseStore;
+  late ChatStore chatStore;
+
   DateTime fromDate = getMonthStart(todayDate);
   DateTime toDate = getMonthEnd(todayDate);
 
-  Future<Expenses> fetchExpenses() async {
-    expenseStore.loading = true;
+  Future<Expenses> fetchExpenses({bool showLoading = true}) async {
+    expenseStore.loading = showLoading;
     final response = await ApiService().fetchExpenses(fromDate, toDate);
 
     if (response.statusCode == 200) {
@@ -39,6 +40,15 @@ class _MyHomePageState extends State<MyHomePage> {
       expenseStore.loading = false;
 
       expenseStore.setExpenses(expenses);
+
+
+      chatStore.clear();
+
+      for (var expense in expenses.list) {
+        chatStore.addMessage(ExpenseMessage(expense));
+        chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
+      }
+
       return expenses;
     } else {
       expenseStore.loading = false;
@@ -64,9 +74,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void refreshExpenses() {
+  Future<Expenses> refreshExpenses({bool showLoading = true}) {
     setState(() => {});
-    futureExpenses = fetchExpenses();
+    futureExpenses = fetchExpenses(showLoading: showLoading);
+    return futureExpenses;
   }
 
   Future<void> updateTimeFrame(newFromDate, newToDate) async {
@@ -77,19 +88,26 @@ class _MyHomePageState extends State<MyHomePage> {
     refreshExpenses();
   }
 
-  Future<Expense> addExpense(userMessage) async {
-    EasyLoading.show(status: 'loading...');
-    var expense = await postExpense(userMessage);
+  Future<Expense?> addExpense(userMessage) async {
+    // EasyLoading.show(status: 'loading...');
+    try {
+      chatStore.history.addAtStart(TextMessage(true, userMessage));
+      var expense = await postExpense(userMessage);
 
-    refreshExpenses();
-    EasyLoading.dismiss();
+      refreshExpenses(showLoading: false);
+      // EasyLoading.dismiss();
 
-    return expense;
+      return expense;
+    } catch (e) {
+      chatStore.history.messages.removeLast();
+      return null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     expenseStore = Provider.of<ExpenseStore>(context, listen: true);
+    chatStore = Provider.of<ChatStore>(context, listen: true);
 
     return Scaffold(
       appBar: AppBar(
@@ -127,16 +145,12 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Stack(children: [
             expenseStore.loading
                 ? const Center(child: CircularProgressIndicator())
-                : const Column(
+                : Column(
                     children: [
-                      BudgetStatus(),
-                      BodyTabs(),
+                      const BudgetStatus(),
+                      BodyTabs(addExpense),
                     ],
                   ),
-            Positioned(
-              bottom: 20,
-              child: AIMessageInput(addExpense),
-            ),
           ]),
         ),
       ),

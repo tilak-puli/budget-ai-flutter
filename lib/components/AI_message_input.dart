@@ -2,7 +2,7 @@ import 'package:budget_ai/models/expense.dart';
 import 'package:flutter/material.dart';
 
 class AIMessageInput extends StatefulWidget {
-  final Future<Expense> Function(dynamic userMessage) addExpense;
+  final void Function(dynamic userMessage) addExpense;
 
   const AIMessageInput(this.addExpense, {super.key});
 
@@ -34,7 +34,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
         autofocus: true,
         controller: _controller,
         onSubmitted: (value) async {
-          await widget.addExpense(value);
+          widget.addExpense(value);
           _controller.clear();
         },
         decoration: const InputDecoration(

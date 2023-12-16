@@ -1,4 +1,5 @@
 import 'package:budget_ai/app.dart';
+import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
@@ -14,13 +15,17 @@ Future<void> main() async {
   );
 
   FirebaseUIAuth.configureProviders([
-    GoogleProvider(clientId: "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com"),
+    GoogleProvider(
+        clientId:
+            "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com"),
   ]);
-  
+
   runApp(
     ChangeNotifierProvider<ExpenseStore>(
       create: (context) => ExpenseStore(),
-      child: const MyApp(),
+      child: ChangeNotifierProvider<ChatStore>(
+          create: (context) => ChatStore(), 
+          child: const MyApp()),
     ),
   );
 }
