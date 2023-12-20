@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       chatStore.clear();
 
-      for (var expense in expenses.list) {
+      for (var expense in expenses.list.take(10)) {
         chatStore.addMessage(ExpenseMessage(expense));
         chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
       }

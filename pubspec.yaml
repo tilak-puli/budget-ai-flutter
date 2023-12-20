@@ -43,12 +43,11 @@ dependencies:
   syncfusion_flutter_charts: ^23.2.6
   provider: ^6.1.1
   firebase_core: ^2.24.0
-  firebase_auth: ^4.15.0
+  firebase_auth: ^4.15.3
   firebase_ui_auth: ^1.11.0
   google_sign_in: ^6.2.0
-  firebase_ui_oauth_google: ^1.2.15
   google_fonts: ^6.1.0
-  
+  firebase_ui_oauth_google: ^1.2.15
 
 dev_dependencies:
   flutter_test:
