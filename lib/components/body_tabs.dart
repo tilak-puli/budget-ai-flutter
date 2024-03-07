@@ -38,9 +38,7 @@ class _BodyTabsState extends State<BodyTabs> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Expanded(
         child: Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
-      return expenseStore.expenses.isEmpty
-          ? const Center(child: NoExpensesMessage())
-          : Column(children: [
+      return Column(children: [
               TabBar(
                 controller: _nestedTabController,
                 tabs: const [

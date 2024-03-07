@@ -48,6 +48,10 @@ class _MyHomePageState extends State<MyHomePage> {
         chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
       }
 
+      if(expenses.isEmpty) {
+          chatStore.addMessage(TextMessage(true, "Just send a message loosely describing you exprense to start your finance journey with AI."));
+      }
+
       return expenses;
     } else {
       expenseStore.loading = false;
@@ -108,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return null;
     } catch (e) {
       chatStore.addAtStart(
-          TextMessage(false, "Something went wrong while trying to ask Finly"));
+          TextMessage(false, "Something went wrong while trying to ask Finget"));
       return null;
     }
   }

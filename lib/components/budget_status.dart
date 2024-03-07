@@ -58,37 +58,38 @@ class BudgetStatusCard extends StatelessWidget {
               Text(
                 currencyFormat.format(total),
                 style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
               ),
-              Text(
-                "${(total / budget.total * 100).toStringAsFixed(0)}%",
-                style: TextStyle(color: Theme.of(context).hintColor),
-              ),
+              // Text(
+              //   "${(total / budget.total * 100).toStringAsFixed(0)}%",
+              //   style: TextStyle(color: Theme.of(context).hintColor),
+              // ),
             ],
           ),
           const SizedBox(height: 5),
-          LinearProgressIndicator(
-              backgroundColor: Theme.of(context).colorScheme.background,
-              minHeight: 10,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              value: total / budget.total),
-          const SizedBox(height: 5),
-          Row(
-            children: [
-              Text("${currencyFormat.format(budget.total - total)} left of ${currencyFormat.format(budget.total)}"),
-              IconButton(
-                  onPressed: () => showDialog<String>(
-                      context: context,
-                      builder: (BuildContext context) => Dialog(
-                            child: Consumer<ExpenseStore>(
-                                builder: (context, expenseStore, child) {
-                              return BudgetEditDailog(expenseStore);
-                            }),
-                          )),
-                  icon: const Icon(Icons.edit))
-            ],
-          )
-        ]),
+          // LinearProgressIndicator(
+          //     backgroundColor: Theme.of(context).colorScheme.background,
+          //     minHeight: 10,
+          //     borderRadius: const BorderRadius.all(Radius.circular(10)),
+          //     value: total / budget.total),
+          // const SizedBox(height: 5),
+          // Row(
+          //   children: [
+          //     Text("${currencyFormat.format(budget.total - total)} left of ${currencyFormat.format(budget.total)}"),
+          //     IconButton(
+          //         onPressed: () => showDialog<String>(
+          //             context: context,
+          //             builder: (BuildContext context) => Dialog(
+          //                   child: Consumer<ExpenseStore>(
+          //                       builder: (context, expenseStore, child) {
+          //                     return BudgetEditDailog(expenseStore);
+          //                   }),
+          //                 )),
+          //         icon: const Icon(Icons.edit))
+          //   ],
+          // )
+        ])
+        ,
       ),
     );
   }

@@ -20,7 +20,7 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 50),
-                    child: Text("Finly",
+                    child: Text("Finget",
                         style: GoogleFonts.arimo(
                             textStyle: TextStyle(
                                 color: Theme.of(context).colorScheme.onPrimary,
@@ -30,7 +30,7 @@ class LoginScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(
-                        "Making Personal finance \nas easy as chatting with a friend",
+                        "Making Personal finance \nas simple as chatting",
                         textAlign: TextAlign.center,
                         style: GoogleFonts.roboto(
                             textStyle: TextStyle(
