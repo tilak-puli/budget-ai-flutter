@@ -96,10 +96,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<Expense?> addExpense(userMessage) async {
     // EasyLoading.show(status: 'loading...');
+    if(userMessage == "") {
+      chatStore.addAtStart(TextMessage(false, "Please send a message with details to add expense"));
+      return null;
+    }
+
     try {
       chatStore.addAtStart(TextMessage(true, userMessage));
+      chatStore.addAtStart(AILoading());
       var expense = await postExpense(userMessage);
-
+      chatStore.pop();
       // EasyLoading.dismiss();
 
       if (expense is Expense) {
@@ -161,6 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 : Column(
                     children: [
                       const BudgetStatus(),
+                      const SizedBox(height: 10),
                       BodyTabs(addExpense),
                     ],
                   ),

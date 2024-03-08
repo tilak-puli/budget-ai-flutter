@@ -1,3 +1,4 @@
+import 'package:budget_ai/components/expense_card.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:flutter/material.dart';
 
@@ -30,19 +31,42 @@ class _AIMessageInputState extends State<AIMessageInput> {
     return SizedBox(
       height: 50,
       width: MediaQuery.of(context).size.width - 20,
-      child: TextField(
-        autofocus: true,
-        controller: _controller,
-        onSubmitted: (value) async {
-          widget.addExpense(value);
-          _controller.clear();
-        },
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          hintText: 'What\'s the expense?',
-          filled: true,
-          fillColor: Colors.white,
-        ),
+      child: Row(
+        children: [
+          Expanded(
+              child: TextField(
+            autofocus: false,
+            controller: _controller,
+            onSubmitted: (value) async {
+              widget.addExpense(value);
+              _controller.clear();
+            },
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'What\'s the expense?',
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          )),
+          Padding(
+            padding: const EdgeInsets.only(left: 2.0),
+            child: Container(
+              height: 50,
+              width: 60,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: IconButton(
+                  color: Colors.white,
+                  onPressed: () async {
+                    widget.addExpense(_controller.text);
+                    _controller.clear();
+                  },
+                  icon: const Icon(Icons.send)),
+            ),
+          )
+        ],
       ),
     );
   }

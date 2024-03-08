@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 class ExpenseList extends StatelessWidget {
   final ExpenseStore expenseStore;
 
-  const ExpenseList(this.expenseStore, {
+  const ExpenseList(
+    this.expenseStore, {
     super.key,
   });
 
@@ -22,8 +23,8 @@ class ExpenseList extends StatelessWidget {
 class ExpensesListBody extends StatelessWidget {
   final ExpenseStore expenseStore;
 
-
-  const ExpensesListBody(this.expenseStore,  {
+  const ExpensesListBody(
+    this.expenseStore, {
     super.key,
   });
 
@@ -37,7 +38,11 @@ class ExpensesListBody extends StatelessWidget {
       v.forEach((expense) => transactions.add(ExpenseCard(expense)));
     });
 
-    return ListView(children: transactions);
+    return expenseStore.expenses.isEmpty
+        ? const Center(
+            child: Text("No transactions recorded this month"),
+          )
+        : ListView(children: transactions);
   }
 }
 

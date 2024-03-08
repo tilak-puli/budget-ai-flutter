@@ -1,8 +1,9 @@
 import 'package:budget_ai/components/expense_card.dart';
+import 'package:budget_ai/components/typing_indicator.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:flutter/material.dart';
 
-class ChatStore extends ChangeNotifier{
+class ChatStore extends ChangeNotifier {
   ChatHistory history = ChatHistory();
 
   void addMessage(ChatMessage message) {
@@ -15,8 +16,14 @@ class ChatStore extends ChangeNotifier{
     history.messages.clear();
   }
 
-  void addAtStart(TextMessage textMessage) {
-    history.addAtStart(textMessage);
+  void addAtStart(ChatMessage chatMessage) {
+    history.addAtStart(chatMessage);
+
+    notifyListeners();
+  }
+
+  void pop() {
+    history.pop();
 
     notifyListeners();
   }
@@ -30,38 +37,42 @@ abstract class ChatMessage {
   Widget render();
 }
 
-class TextMessage extends ChatMessage{
+class TextMessage extends ChatMessage {
   String text;
 
-  TextMessage(bool isUserMessage, this.text): super(isUserMessage);
+  TextMessage(bool isUserMessage, this.text) : super(isUserMessage);
 
   @override
   Widget render() {
-    return Card(child: Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Text(text),
+    return Card(
+        child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      child: Text(text, style: const TextStyle(fontSize: 16),),
     ));
   }
-
 }
 
-class ExpenseMessage extends ChatMessage{
+class ExpenseMessage extends ChatMessage {
   late Expense expense;
 
-  ExpenseMessage(this.expense): super(false);
+  ExpenseMessage(this.expense) : super(false);
 
   @override
   Widget render() {
     return Card(child: ExpenseCard(expense));
   }
-
 }
 
+class AILoading extends ChatMessage {
+  AILoading() : super(false);
 
-enum MessageType {
-  text,
-  expense
+  @override
+  Widget render() {
+    return const TypingIndicator(showIndicator: true);
+  }
 }
+
+enum MessageType { text, expense }
 
 class ChatHistory {
   List<ChatMessage> messages = List.empty(growable: true);
@@ -72,5 +83,9 @@ class ChatHistory {
 
   addAtStart(ChatMessage message) {
     messages.insert(0, message);
+  }
+
+  void pop() {
+    messages.removeAt(0);
   }
 }

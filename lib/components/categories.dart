@@ -12,21 +12,31 @@ class Categories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var groupedByCategoryList = expenses.groupByCategory.entries.map((entry) => [entry.key, entry.value]).toList();
-    final List<ChartData> chartData = groupedByCategoryList.map<ChartData>((group) => ChartData(group[0], Expenses(group[1]).total)).toList();
+    var groupedByCategoryList = expenses.groupByCategory.entries
+        .map((entry) => [entry.key, entry.value])
+        .toList();
+    final List<ChartData> chartData = groupedByCategoryList
+        .map<ChartData>(
+            (group) => ChartData(group[0], Expenses(group[1]).total))
+        .toList();
 
     return Center(
-        child: SfCircularChart(
-            tooltipBehavior: TooltipBehavior(enable: true),
-            legend: const Legend(isVisible: true),
-            series: <CircularSeries>[
-          // Render pie chart
-          PieSeries<ChartData, String>(
-              dataSource: chartData,
-              xValueMapper: (ChartData data, _) => data.x,
-              yValueMapper: (ChartData data, _) => data.y,
-              dataLabelSettings: const DataLabelSettings(isVisible: true)),
-        ]));
+        child: expenses.isEmpty
+            ? const Center(
+                child: Text("No transactions recorded this month"),
+              )
+            : SfCircularChart(
+                tooltipBehavior: TooltipBehavior(enable: true),
+                legend: const Legend(isVisible: true),
+                series: <CircularSeries>[
+                    // Render pie chart
+                    PieSeries<ChartData, String>(
+                        dataSource: chartData,
+                        xValueMapper: (ChartData data, _) => data.x,
+                        yValueMapper: (ChartData data, _) => data.y,
+                        dataLabelSettings:
+                            const DataLabelSettings(isVisible: true)),
+                  ]));
   }
 }
 

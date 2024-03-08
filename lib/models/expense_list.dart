@@ -15,19 +15,32 @@ class Expenses {
   get total => list.map((e) => e.amount).sum;
 
   get groupByTime => groupBy(list, (expense) => getTimeTag(expense.datetime));
-  
+
   get groupByCategory => groupBy(list, (expense) => expense.category);
 
   String getTimeTag(DateTime datetime) {
     var now = DateTime.now();
     if (isSameDate(datetime, now)) {
       return "Today";
-    } else if(datetime.difference(now).inDays == 1) {
-    } else if(datetime.difference(now).inDays <= 7 ) {
-      return "Last Week";
+    } else if (datetime.difference(now).inDays <= 1) {
+      return 'Yesterday';
+    } else if (isInSameWeek(datetime, now)) {
+      return "This Week";
     }
 
     return "Older";
+  }
+
+  bool isInSameWeek(DateTime date1, DateTime date2) {
+    // Check if the week number and year are the same for both dates
+    return date1.weekday == date2.weekday &&
+        date1.difference(startOfWeek(date1)).inDays ==
+            date2.difference(startOfWeek(date2)).inDays;
+  }
+
+  DateTime startOfWeek(DateTime date) {
+    // Calculate the start of the week (Sunday) for the given date
+    return date.subtract(Duration(days: date.weekday - 1));
   }
 
   bool isSameDate(DateTime date, DateTime other) {
@@ -43,7 +56,7 @@ class Expenses {
   void update(String id, Expense newExpense) {
     var index = list.indexWhere((element) => element.id == id);
 
-    if(index != -1) {
+    if (index != -1) {
       list[index] = newExpense;
     }
   }
