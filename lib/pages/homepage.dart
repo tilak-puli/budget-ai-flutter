@@ -11,8 +11,24 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
 
 var todayDate = DateTime.now();
+
+List<String> months = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+];
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -48,8 +64,9 @@ class _MyHomePageState extends State<MyHomePage> {
         chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
       }
 
-      if(expenses.isEmpty) {
-          chatStore.addMessage(TextMessage(true, "Just send a message loosely describing you exprense to start your finance journey with AI."));
+      if (expenses.isEmpty) {
+        chatStore.addMessage(TextMessage(true,
+            "Just send a message loosely describing you exprense to start your finance journey with AI."));
       }
 
       return expenses;
@@ -60,7 +77,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Object> postExpense(userMessage) async {
-    final response = await ApiService().addExpense(userMessage);
+    bool isCurrentMonthTransaction = fromDate.month == todayDate.month;
+    DateTime? date;
+
+    if (!isCurrentMonthTransaction) {
+      date = toDate;
+    }
+
+    final response = await ApiService().addExpense(userMessage, date);
 
     if (response.statusCode == 200) {
       return Expense.fromJson(jsonDecode(response.body));
@@ -96,8 +120,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<Expense?> addExpense(userMessage) async {
     // EasyLoading.show(status: 'loading...');
-    if(userMessage == "") {
-      chatStore.addAtStart(TextMessage(false, "Please send a message with details to add expense"));
+    if (userMessage == "") {
+      chatStore.addAtStart(TextMessage(
+          false, "Please send a message with details to add expense"));
       return null;
     }
 
@@ -117,8 +142,13 @@ class _MyHomePageState extends State<MyHomePage> {
       chatStore.addAtStart(TextMessage(false, expense as String));
       return null;
     } catch (e) {
-      chatStore.addAtStart(
-          TextMessage(false, "Something went wrong while trying to ask Finget"));
+      developer.log(
+        'Error creating expense',
+        error: jsonEncode(e),
+      );
+      chatStore.pop();
+      chatStore.addAtStart(TextMessage(
+          false, "Something went wrong while trying to connect to Finget"));
       return null;
     }
   }
@@ -166,7 +196,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                     children: [
-                      const BudgetStatus(),
+                      BudgetStatus(toDate.month == todayDate.month
+                          ? 'This month'
+                          : "${months[toDate.month - 1]} month"),
                       const SizedBox(height: 10),
                       BodyTabs(addExpense),
                     ],

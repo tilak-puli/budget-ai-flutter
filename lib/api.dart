@@ -27,10 +27,10 @@ class ApiService {
     return await http.get(uri, headers: await getHeaders());
   }
 
-  Future<http.Response> addExpense(userMessage) async {
+  Future<http.Response> addExpense(userMessage, date) async {
     return await http.post(URI(host, '/ai/expense'),
         headers: await getHeaders(),
-        body: json.encode(<String, String>{"userMessage": userMessage}));
+        body: json.encode(<String, String>{"userMessage": userMessage, "date": date != null ? date.toString() : ""}));
   }
 
   Future<http.Response> deleteExpense(id) async {

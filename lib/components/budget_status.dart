@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class BudgetStatus extends StatelessWidget {
-  const BudgetStatus({
+  String title;
+
+  BudgetStatus(
+    this.title, {
     super.key,
   });
 
@@ -15,7 +18,8 @@ class BudgetStatus extends StatelessWidget {
     return Column(
       children: [
         Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
-          return BudgetStatusCard(expenseStore.expenses, expenseStore.budget);
+          return BudgetStatusCard(
+              expenseStore.expenses, expenseStore.budget, title);
         })
       ],
     );
@@ -25,9 +29,12 @@ class BudgetStatus extends StatelessWidget {
 class BudgetStatusCard extends StatelessWidget {
   final Expenses expenses;
   final Budget budget;
+  final String title;
 
   const BudgetStatusCard(
-    this.expenses, this.budget, {
+    this.expenses,
+    this.budget,
+    this.title, {
     super.key,
   });
 
@@ -42,11 +49,12 @@ class BudgetStatusCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(children: [
-          const Row(
+          Row(
             children: [
               Text(
-                "This month",
-                style: TextStyle(fontWeight: FontWeight.normal, fontSize: 15),
+                title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.normal, fontSize: 15),
               ),
             ],
           ),
@@ -88,8 +96,7 @@ class BudgetStatusCard extends StatelessWidget {
           //         icon: const Icon(Icons.edit))
           //   ],
           // )
-        ])
-        ,
+        ]),
       ),
     );
   }
