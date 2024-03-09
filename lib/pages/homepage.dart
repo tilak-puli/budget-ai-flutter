@@ -134,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // EasyLoading.dismiss();
 
       if (expense is Expense) {
-        refreshExpenses(showLoading: false);
+         chatStore.addAtStart(ExpenseMessage(expense));
 
         return expense;
       }

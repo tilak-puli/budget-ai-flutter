@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const host = kReleaseMode ? "finance-ai-backend.onrender.com" : "localhost:3000"; 
+const host = kReleaseMode ? "finance-ai-backend.onrender.com" : "127.0.0.1:5001"; 
 const URI = kReleaseMode ? Uri.https : Uri.http;
 
 getHeaders() async {
@@ -19,7 +19,7 @@ getHeaders() async {
 class ApiService {
   Future<http.Response> fetchExpenses(
       DateTime fromDate, DateTime toDate) async {
-    var uri = URI(host, '/expenses', {
+    var uri = URI(host, '/finbud-99269/us-central1/backend/expenses', {
       "fromDate": fromDate.toUtc().toIso8601String(),
       "toDate": toDate.toUtc().toIso8601String()
     });
@@ -28,7 +28,7 @@ class ApiService {
   }
 
   Future<http.Response> addExpense(userMessage, date) async {
-    return await http.post(URI(host, '/ai/expense'),
+    return await http.post(URI(host, '/finbud-99269/us-central1/backend/ai/expense'),
         headers: await getHeaders(),
         body: json.encode(<String, String>{"userMessage": userMessage, "date": date != null ? date.toString() : ""}));
   }

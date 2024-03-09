@@ -10,12 +10,7 @@ class Chatbox extends StatelessWidget {
   const Chatbox(this.addExpense, {super.key});
 
   Future<void> onAddMessage(userMessage, ChatStore chatStore) async {
-    chatStore.addMessage(TextMessage(true, userMessage));
-    Expense? expense = await addExpense(userMessage);
-
-    if(expense != null) {
-      chatStore.addMessage(ExpenseMessage(expense));
-    }
+    await addExpense(userMessage);
   }
 
   @override
