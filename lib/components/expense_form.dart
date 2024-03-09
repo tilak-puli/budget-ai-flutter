@@ -5,10 +5,11 @@ import 'package:flutter/services.dart';
 
 class ExpenseForm extends StatefulWidget {
   final Expense expense;
-  final Future<void> Function(Expense)  updateExpense;
+  final Future<void> Function(Expense) updateExpense;
 
   const ExpenseForm(
-    this.expense, this.updateExpense, {
+    this.expense,
+    this.updateExpense, {
     super.key,
   });
 
@@ -21,6 +22,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
   late String category;
   late String description;
   late DateTime datetime;
+  bool dateChanged = false;
   late int amount;
 
   @override
@@ -31,7 +33,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextFormField(
-            onSaved: (value) {if(value != null) {description = value;} },
+            onSaved: (value) {
+              if (value != null) {
+                description = value;
+              }
+            },
             decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: "Description",
@@ -46,7 +52,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField(
-            onSaved: (value) {if(value != null) {category = value;} },
+            onSaved: (value) {
+              if (value != null) {
+                category = value;
+              }
+            },
             decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: "Category",
@@ -64,7 +74,11 @@ class _ExpenseFormState extends State<ExpenseForm> {
           ),
           const SizedBox(height: 20),
           TextFormField(
-            onSaved: (value) {if(value != null) {amount = int.parse(value);} },
+            onSaved: (value) {
+              if (value != null) {
+                amount = int.parse(value);
+              }
+            },
             decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: "Amount",
@@ -81,7 +95,10 @@ class _ExpenseFormState extends State<ExpenseForm> {
           ),
           const SizedBox(height: 20),
           InputDatePickerFormField(
-              onDateSaved: (value) {datetime = value;},
+              onDateSaved: (value) {
+                dateChanged = true;
+                datetime = value;
+              },
               fieldLabelText: "Date",
               initialDate: widget.expense.datetime,
               firstDate: allowedStartDateTime,
@@ -92,7 +109,13 @@ class _ExpenseFormState extends State<ExpenseForm> {
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _formKey.currentState!.save();
-                  var newExpense = Expense(widget.expense.id, amount, category, description, datetime, widget.expense.prompt);
+                  var newExpense = Expense(
+                      widget.expense.id,
+                      amount,
+                      category,
+                      description,
+                      dateChanged ? datetime : widget.expense.datetime,
+                      widget.expense.prompt);
                   widget.updateExpense(newExpense);
                 }
               },

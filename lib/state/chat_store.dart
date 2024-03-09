@@ -22,6 +22,20 @@ class ChatStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateMessage(String expenseId, ChatMessage chatMessage) {
+    history.update(expenseId, chatMessage);
+
+    notifyListeners();
+  }
+
+
+  void remove(String expenseId) {
+    history.remove(expenseId);
+
+    notifyListeners();
+  }
+
+
   void pop() {
     history.pop();
 
@@ -31,8 +45,9 @@ class ChatStore extends ChangeNotifier {
 
 abstract class ChatMessage {
   late bool isUserMessage;
+  late String? expenseId;
 
-  ChatMessage(this.isUserMessage);
+  ChatMessage(this.isUserMessage, this.expenseId);
 
   Widget render();
 }
@@ -40,7 +55,7 @@ abstract class ChatMessage {
 class TextMessage extends ChatMessage {
   String text;
 
-  TextMessage(bool isUserMessage, this.text) : super(isUserMessage);
+  TextMessage(bool isUserMessage, this.text) : super(isUserMessage, null);
 
   @override
   Widget render() {
@@ -55,7 +70,7 @@ class TextMessage extends ChatMessage {
 class ExpenseMessage extends ChatMessage {
   late Expense expense;
 
-  ExpenseMessage(this.expense) : super(false);
+  ExpenseMessage(this.expense) : super(false, expense.id);
 
   @override
   Widget render() {
@@ -64,7 +79,7 @@ class ExpenseMessage extends ChatMessage {
 }
 
 class AILoading extends ChatMessage {
-  AILoading() : super(false);
+  AILoading() : super(false, null);
 
   @override
   Widget render() {
@@ -87,5 +102,18 @@ class ChatHistory {
 
   void pop() {
     messages.removeAt(0);
+  }
+
+  void update(String expenseId, ChatMessage updated) {
+    var messageIndex = messages.indexWhere((element) => element.expenseId == expenseId);
+
+    if(messageIndex != -1) {
+      messages[messageIndex] = updated;
+    }
+  }
+
+
+  void remove(String expenseId) {
+    messages.removeWhere((element) => element.expenseId == expenseId);
   }
 }

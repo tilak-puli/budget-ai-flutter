@@ -1,6 +1,7 @@
 import 'package:budget_ai/api.dart';
 import 'package:budget_ai/components/expense_form.dart';
 import 'package:budget_ai/models/expense.dart';
+import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +42,10 @@ class ExpenseCard extends StatelessWidget {
         builder: (BuildContext context) => Dialog.fullscreen(
           child:
               Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
-            return ExpenseDailog(expense, expenseStore);
+            return Consumer<ChatStore>(
+                builder: (context, chatStore, child) {
+              return ExpenseDailog(expense, chatStore, expenseStore);
+            });
           }),
         ),
       ),
@@ -60,12 +64,14 @@ class ExpenseCard extends StatelessWidget {
 
 class ExpenseDailog extends StatelessWidget {
   final ExpenseStore expenseStore;
+  final ChatStore chatStore;
   final Expense expense;
-  
+
   late BuildContext context;
 
   ExpenseDailog(
     this.expense,
+    this.chatStore,
     this.expenseStore, {
     super.key,
   });
@@ -80,10 +86,10 @@ class ExpenseDailog extends StatelessWidget {
     }
 
     expenseStore.deleteExpense(expense.id);
+    chatStore.remove(expense.id);
 
     EasyLoading.dismiss();
   }
-
 
   Future<void> updateExpense(Expense newExpense) async {
     EasyLoading.show(status: 'updating...');
@@ -95,6 +101,8 @@ class ExpenseDailog extends StatelessWidget {
     }
 
     expenseStore.updateExpense(expense.id, newExpense);
+    chatStore.updateMessage(expense.id, ExpenseMessage(newExpense));
+
     EasyLoading.dismiss();
     Navigator.pop(context);
   }
