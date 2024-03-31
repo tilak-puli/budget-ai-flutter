@@ -9,7 +9,7 @@ class Expense {
   const Expense(this.id, this.amount, this.category, this.description, this.datetime, this.prompt);
 
   factory Expense.fromJson(json) {
-    return Expense(json['_id'] as String, json['amount'] as double, json['category'] as String,
+    return Expense(json['_id'] as String, json['amount'] as num, json['category'] as String,
         json['description'] as String, DateTime.parse(json['date']).toLocal(), json['prompt'] ?? "");
   }
 
