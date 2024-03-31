@@ -4,7 +4,7 @@ DateTime getMonthStart(DateTime date) {
 
 
 DateTime getMonthEnd(DateTime date) {
-  return DateTime(date.year, date.month + 1, 0);
+  return DateTime(date.year, date.month + 1, 0, 24);
 }
 
 var today = DateTime.now();
