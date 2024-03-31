@@ -61,7 +61,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
               ),
               child: IconButton(
                   color: Colors.white,
-                  onPressed: widget.disabled == true ? () async {
+                  onPressed: widget.disabled != true ? () async {
                     widget.addExpense(_controller.text);
                     _controller.clear();
                   } : null,
