@@ -1,5 +1,3 @@
-import 'dart:js_util';
-
 import 'package:budget_ai/components/ai_message_input.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/state/chat_store.dart';

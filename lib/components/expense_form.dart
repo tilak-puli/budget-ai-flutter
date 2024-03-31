@@ -111,7 +111,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
                   _formKey.currentState!.save();
                   var newExpense = Expense(
                       widget.expense.id,
-                      amount,
+                      amount as double,
                       category,
                       description,
                       dateChanged ? datetime : widget.expense.datetime,
