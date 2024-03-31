@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const host = kReleaseMode ? "finance-ai-backend.onrender.com" : "127.0.0.1:5001"; 
+const host = kReleaseMode ? "backend-2xqnus4dqq-uc.a.run.app" : "127.0.0.1:5001"; 
 const URI = kReleaseMode ? Uri.https : Uri.http;
-const URL_PREFIX = "finbud-99269/us-central1/backend";
+const URL_PREFIX = kReleaseMode ? "" : "finbud-99269/us-central1/backend";
 
 getHeaders() async {
   String? bearer = await FirebaseAuth.instance.currentUser!.getIdToken();

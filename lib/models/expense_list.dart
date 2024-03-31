@@ -49,6 +49,10 @@ class Expenses {
         date.day == other.day;
   }
 
+  void add(Expense expense) {
+    list.add(expense);
+  }
+
   void remove(id) {
     list.removeWhere((element) => element.id == id);
   }

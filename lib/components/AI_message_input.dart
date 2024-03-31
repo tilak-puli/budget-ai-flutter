@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 
 class AIMessageInput extends StatefulWidget {
   final void Function(dynamic userMessage) addExpense;
+  
+  final bool? disabled;
 
-  const AIMessageInput(this.addExpense, {super.key});
+  const AIMessageInput(this.addExpense, {super.key, this.disabled});
 
   @override
   State<AIMessageInput> createState() => _AIMessageInputState();
@@ -37,10 +39,10 @@ class _AIMessageInputState extends State<AIMessageInput> {
               child: TextField(
             autofocus: false,
             controller: _controller,
-            onSubmitted: (value) async {
+            onSubmitted: widget.disabled == true ? (value) async {
               widget.addExpense(value);
               _controller.clear();
-            },
+            } : null,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               hintText: 'What\'s the expense?',
@@ -59,10 +61,10 @@ class _AIMessageInputState extends State<AIMessageInput> {
               ),
               child: IconButton(
                   color: Colors.white,
-                  onPressed: () async {
+                  onPressed: widget.disabled == true ? () async {
                     widget.addExpense(_controller.text);
                     _controller.clear();
-                  },
+                  } : null,
                   icon: const Icon(Icons.send)),
             ),
           )

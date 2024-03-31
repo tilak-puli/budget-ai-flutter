@@ -135,6 +135,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (expense is Expense) {
          chatStore.addAtStart(ExpenseMessage(expense));
+         expenseStore.expenses.add(expense);
 
         return expense;
       }

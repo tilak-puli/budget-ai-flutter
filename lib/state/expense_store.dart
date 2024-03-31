@@ -31,4 +31,10 @@ class ExpenseStore extends ChangeNotifier{
 
    notifyListeners(); 
   }
+
+  void add(Expense expense) {
+    expenses.add(expense);
+
+    notifyListeners();
+  }
 }
