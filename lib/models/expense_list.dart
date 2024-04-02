@@ -50,7 +50,7 @@ class Expenses {
   }
 
   void add(Expense expense) {
-    list.add(expense);
+    list.insert(0, expense);
   }
 
   void remove(id) {

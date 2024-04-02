@@ -13,6 +13,8 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 var todayDate = DateTime.now();
 
 List<String> months = [
@@ -48,7 +50,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<Expenses> fetchExpenses({bool showLoading = true}) async {
     expenseStore.loading = showLoading;
-    final response = await ApiService().fetchExpenses(fromDate, toDate);
+    var response;
+
+    try {
+      response = await ApiService().fetchExpenses(fromDate, toDate);
+    }
+    catch(e) {
+      chatStore.addAtStart(TextMessage(false, e.toString()));
+      rethrow;
+    };
 
     if (response.statusCode == 200) {
       var expenses =
@@ -59,20 +69,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
       chatStore.clear();
 
-      for (var expense in expenses.list.take(10)) {
-        chatStore.addMessage(ExpenseMessage(expense));
-        chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
-      }
-
-      if (expenses.isEmpty) {
-        chatStore.addMessage(TextMessage(true,
-            "Just send a message loosely describing you exprense to start your finance journey with AI."));
-      }
+      addChatMessages(expenses);
 
       return expenses;
     } else {
       expenseStore.loading = false;
       throw Exception('Failed to load expenses');
+    }
+  }
+
+  void addChatMessages(Expenses expenses) {
+    
+    for (var expense in expenses.list.take(10)) {
+      chatStore.addMessage(ExpenseMessage(expense));
+      chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
+    }
+    
+    if (expenses.isEmpty) {
+      chatStore.addMessage(TextMessage(true,
+          "Just send a message loosely describing you exprense to start your finance journey with AI."));
     }
   }
 
@@ -99,9 +114,21 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      refreshExpenses();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      Expenses expenses = await getExpensesFromStorage();
+      expenseStore.setExpenses(expenses);
+      addChatMessages(expenses);
+
+      refreshExpenses(showLoading: false);
     });
+  }
+
+  Future<Expenses> getExpensesFromStorage() async {
+     final prefs = await SharedPreferences.getInstance();
+    var storedExpenses = jsonDecode(prefs.getString("expenses") ?? "[]");
+    var expenses = Expenses.fromJson(storedExpenses as List<dynamic>);
+    return expenses;
   }
 
   Future<Expenses> refreshExpenses({bool showLoading = true}) {
@@ -134,8 +161,9 @@ class _MyHomePageState extends State<MyHomePage> {
       // EasyLoading.dismiss();
 
       if (expense is Expense) {
-         chatStore.addAtStart(ExpenseMessage(expense));
-         expenseStore.add(expense);
+        chatStore.addAtStart(ExpenseMessage(expense));
+        expenseStore.add(expense);
+        storeExpensesInStorage(expenseStore.expenses);
 
         return expense;
       }

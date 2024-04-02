@@ -13,5 +13,5 @@ class Expense {
         json['description'] as String, DateTime.parse(json['date']).toLocal(), json['prompt'] ?? "");
   }
 
-  toJson() => {'_id': id, 'amount': amount, "description": description,  "category": category, 'date': datetime.toUtc().toIso8601String()};
+  toJson() => {'_id': id, 'amount': amount, "description": description,  "category": category, 'date': datetime.toUtc().toIso8601String(), "prompt": prompt};
 }
