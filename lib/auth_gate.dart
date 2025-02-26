@@ -15,7 +15,7 @@ class AuthGate extends StatelessWidget {
           return const LoginScreen();
         }
 
-        return const MyHomePage(title: 'Finget');
+        return const MyHomePage(title: 'Coin Master AI');
       },
     );
   }

@@ -4,9 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const host = kReleaseMode ? "backend-2xqnus4dqq-uc.a.run.app" : "127.0.0.1:5001"; 
-const URI = kReleaseMode ? Uri.https : Uri.http;
-const URL_PREFIX = kReleaseMode ? "" : "finbud-99269/us-central1/backend";
+const host =
+    !kReleaseMode ? "backend-2xqnus4dqq-uc.a.run.app" : "127.0.0.1:5001";
+const URI = !kReleaseMode ? Uri.https : Uri.http;
+const URL_PREFIX = !kReleaseMode ? "" : "finbud-99269/us-central1/backend";
 
 getHeaders() async {
   String? bearer = await FirebaseAuth.instance.currentUser!.getIdToken();
@@ -31,7 +32,10 @@ class ApiService {
   Future<http.Response> addExpense(userMessage, date) async {
     return await http.post(URI(host, '$URL_PREFIX/ai/expense'),
         headers: await getHeaders(),
-        body: json.encode(<String, String>{"userMessage": userMessage, "date": date != null ? date.toString() : ""}));
+        body: json.encode(<String, String>{
+          "userMessage": userMessage,
+          "date": date != null ? date.toString() : ""
+        }));
   }
 
   Future<http.Response> deleteExpense(id) async {
@@ -42,7 +46,7 @@ class ApiService {
 
   updateExpense(Expense expense) async {
     return await http.patch(URI(host, '$URL_PREFIX/expenses'),
-       headers: await getHeaders(),
+        headers: await getHeaders(),
         body: json.encode(<String, Object>{"expense": expense.toJson()}));
   }
 }

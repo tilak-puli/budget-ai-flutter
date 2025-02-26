@@ -23,6 +23,20 @@ class ExpenseStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Expenses mergeExpenses(Expenses newExpenses) {
+    List<Expense> mergedList = mergeSortedLists<Expense>(
+      expenses.list,
+      newExpenses.list,
+      (Expense a, Expense b) => b.datetime
+          .compareTo(a.datetime), // Sort by datetime in descending order
+    );
+
+    expenses = Expenses(mergedList);
+    storeExpensesInStorage(expenses);
+    notifyListeners();
+    return expenses;
+  }
+
   void deleteExpense(id) {
     expenses.remove(id);
     storeExpensesInStorage(expenses);
@@ -49,4 +63,36 @@ class ExpenseStore extends ChangeNotifier {
 
     notifyListeners();
   }
+}
+
+List<T> mergeSortedLists<T>(
+  List<T> list1,
+  List<T> list2,
+  int Function(T a, T b) compare,
+) {
+  List<T> mergedList = [];
+  int i = 0, j = 0;
+
+  while (i < list1.length && j < list2.length) {
+    if (compare(list1[i], list2[j]) <= 0) {
+      mergedList.add(list1[i]);
+      i++;
+    } else {
+      mergedList.add(list2[j]);
+      j++;
+    }
+  }
+
+  // Add remaining elements from either list
+  while (i < list1.length) {
+    mergedList.add(list1[i]);
+    i++;
+  }
+
+  while (j < list2.length) {
+    mergedList.add(list2[j]);
+    j++;
+  }
+
+  return mergedList;
 }

@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "706321535461",
     "project_id": "finbud-99269",
-    "storage_bucket": "finbud-99269.appspot.com"
+    "storage_bucket": "finbud-99269.firebasestorage.app"
   },
   "client": [
     {
@@ -57,6 +57,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "706321535461-6n6h3ponqh88p0p3u02eds96o6v3ivs2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tilakpuli.budget_ai",
+            "certificate_hash": "3fe006bed4e197f19ff62bc64e89c5a114b900d5"
+          }
+        },
         {
           "client_id": "706321535461-hnm9l56sfcgjaam0knh3rrsfc4td5805.apps.googleusercontent.com",
           "client_type": 1,

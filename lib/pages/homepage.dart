@@ -9,6 +9,7 @@ import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/time.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/src/response.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
@@ -54,18 +55,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
     try {
       response = await ApiService().fetchExpenses(fromDate, toDate);
-    }
-    catch(e) {
+    } catch (e) {
       chatStore.addAtStart(TextMessage(false, e.toString()));
       rethrow;
-    };
+    }
+    ;
 
     if (response.statusCode == 200) {
       var expenses =
           Expenses.fromJson(jsonDecode(response.body) as List<dynamic>);
       expenseStore.loading = false;
 
-      expenseStore.setExpenses(expenses);
+      expenses = expenseStore.mergeExpenses(expenses);
 
       chatStore.clear();
 
@@ -79,12 +80,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void addChatMessages(Expenses expenses) {
-    
     for (var expense in expenses.list.take(10)) {
       chatStore.addMessage(ExpenseMessage(expense));
       chatStore.addMessage(TextMessage(true, expense.prompt ?? ""));
     }
-    
+
     if (expenses.isEmpty) {
       chatStore.addMessage(TextMessage(true,
           "Just send a message loosely describing you exprense to start your finance journey with AI."));
@@ -99,7 +99,13 @@ class _MyHomePageState extends State<MyHomePage> {
       date = toDate;
     }
 
-    final response = await ApiService().addExpense(userMessage, date);
+    Response response;
+
+    try {
+      response = await ApiService().addExpense(userMessage, date);
+    } catch (e) {
+      return Exception("Something went wrong while connecting to server");
+    }
 
     if (response.statusCode == 200) {
       return Expense.fromJson(jsonDecode(response.body));
@@ -125,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Expenses> getExpensesFromStorage() async {
-     final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     var storedExpenses = jsonDecode(prefs.getString("expenses") ?? "[]");
     var expenses = Expenses.fromJson(storedExpenses as List<dynamic>);
     return expenses;
@@ -173,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (e) {
       developer.log(
         'Error creating expense',
-        error: jsonEncode(e),
+        // error: jsonEncode(e),
       );
       chatStore.pop();
       chatStore.addAtStart(TextMessage(

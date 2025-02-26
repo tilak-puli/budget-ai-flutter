@@ -20,7 +20,7 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 50),
-                    child: Text("Finget",
+                    child: Text("Coin Master AI ",
                         style: GoogleFonts.arimo(
                             textStyle: TextStyle(
                                 color: Theme.of(context).colorScheme.onPrimary,
