@@ -19,6 +19,48 @@ getHeaders() async {
 }
 
 class ApiService {
+  // Helper method to log requests and responses
+  Future<http.Response> _makeRequest(String method, Uri url,
+      Map<String, String> headers, String? body, String operationName) async {
+    try {
+      print("\n------- $operationName API CALL [$method] -------");
+      print("URL: $url");
+      print("Headers: $headers");
+      if (body != null) {
+        print("Request body: $body");
+      }
+
+      http.Response response;
+
+      switch (method) {
+        case 'GET':
+          response = await http.get(url, headers: headers);
+          break;
+        case 'POST':
+          response = await http.post(url, headers: headers, body: body);
+          break;
+        case 'DELETE':
+          response = await http.delete(url, headers: headers, body: body);
+          break;
+        case 'PATCH':
+          response = await http.patch(url, headers: headers, body: body);
+          break;
+        default:
+          throw Exception('Unsupported HTTP method: $method');
+      }
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+      print("------- END $operationName API CALL -------\n");
+
+      return response;
+    } catch (e) {
+      print("API ERROR in $operationName: $e");
+      print("------- END $operationName API CALL WITH ERROR -------\n");
+      rethrow;
+    }
+  }
+
   Future<http.Response> fetchExpenses(
       DateTime fromDate, DateTime toDate) async {
     var uri = URI(host, '$URL_PREFIX/expenses', {
@@ -26,27 +68,53 @@ class ApiService {
       "toDate": toDate.toUtc().toIso8601String()
     });
 
-    return await http.get(uri, headers: await getHeaders());
+    final headers = await getHeaders();
+    return _makeRequest('GET', uri, headers, null, 'FETCH_EXPENSES');
   }
 
   Future<http.Response> addExpense(userMessage, date) async {
-    return await http.post(URI(host, '$URL_PREFIX/ai/expense'),
-        headers: await getHeaders(),
-        body: json.encode(<String, String>{
-          "userMessage": userMessage,
-          "date": date != null ? date.toString() : ""
-        }));
+    final uri = URI(host, '$URL_PREFIX/ai/expense');
+    final headers = await getHeaders();
+    final body = json.encode(<String, String>{
+      "userMessage": userMessage,
+      "date": date != null ? date.toString() : ""
+    });
+
+    return _makeRequest('POST', uri, headers, body, 'AI_ADD_EXPENSE');
   }
 
   Future<http.Response> deleteExpense(id) async {
-    return await http.delete(URI(host, '$URL_PREFIX/expenses'),
-        headers: await getHeaders(),
-        body: json.encode(<String, String>{"id": id}));
+    final uri = URI(host, '$URL_PREFIX/expenses');
+    final headers = await getHeaders();
+    final body = json.encode(<String, String>{"id": id});
+
+    return _makeRequest('DELETE', uri, headers, body, 'DELETE_EXPENSE');
   }
 
-  updateExpense(Expense expense) async {
-    return await http.patch(URI(host, '$URL_PREFIX/expenses'),
-        headers: await getHeaders(),
-        body: json.encode(<String, Object>{"expense": expense.toJson()}));
+  Future<http.Response> updateExpense(Expense expense) async {
+    final uri = URI(host, '$URL_PREFIX/expenses');
+    final headers = await getHeaders();
+    final body = json.encode(<String, Object>{"expense": expense.toJson()});
+
+    return _makeRequest('PATCH', uri, headers, body, 'UPDATE_EXPENSE');
+  }
+
+  // Method for manually creating expense through API
+  Future<http.Response> createExpense(Expense expense) async {
+    final uri = URI(host, '$URL_PREFIX/expenses');
+    final headers = await getHeaders();
+
+    // Create request body with the proper structure
+    final requestBody = json.encode({
+      "expense": {
+        "category": expense.category,
+        "date": expense.datetime.toUtc().toIso8601String(),
+        "description": expense.description,
+        "amount": expense.amount
+      }
+    });
+
+    return _makeRequest(
+        'POST', uri, headers, requestBody, 'MANUAL_CREATE_EXPENSE');
   }
 }

@@ -1,22 +1,26 @@
 import 'dart:async';
 import 'package:budget_ai/components/expense_card.dart';
+import 'package:budget_ai/components/create_expense_form.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 
 class AIMessageInput extends StatefulWidget {
-  final void Function(dynamic userMessage) addExpense;
+  final Function(dynamic) onAddMessage;
+  final bool isDisabled;
 
-  final bool? disabled;
-
-  const AIMessageInput(this.addExpense, {super.key, this.disabled});
+  const AIMessageInput({
+    super.key,
+    required this.onAddMessage,
+    this.isDisabled = false,
+  });
 
   @override
   State<AIMessageInput> createState() => _AIMessageInputState();
 }
 
 class _AIMessageInputState extends State<AIMessageInput> {
-  late TextEditingController _controller;
+  final TextEditingController _controller = TextEditingController();
   final SubscriptionService _subscriptionService = SubscriptionService();
   int _remainingMessages = 0;
   bool _isPremium = false;
@@ -29,7 +33,6 @@ class _AIMessageInputState extends State<AIMessageInput> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
     _loadSubscriptionData();
 
     // Set up a timer to refresh the count every 30 seconds
@@ -75,6 +78,30 @@ class _AIMessageInputState extends State<AIMessageInput> {
     }
   }
 
+  void _onSendPressed() {
+    if (_controller.text.trim().isNotEmpty) {
+      widget.onAddMessage(_controller.text);
+      _controller.clear();
+      _onMessageSent();
+    }
+  }
+
+  void _showCreateExpenseForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateExpenseForm(
+          onExpenseCreated: (Expense expense) {
+            // Pass expense directly to onAddMessage
+            print(
+                "Expense created and being passed to onAddMessage: ${expense.id}");
+            widget.onAddMessage(expense);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -102,32 +129,47 @@ class _AIMessageInputState extends State<AIMessageInput> {
           child: Row(
             children: [
               Expanded(
-                  child: TextField(
-                autofocus: false,
-                controller: _controller,
-                onSubmitted: (widget.disabled == true ||
-                        _remainingMessages <= 0 && !_isPremium)
-                    ? null
-                    : (value) async {
-                        final text = value.trim();
-                        if (text.isNotEmpty) {
-                          widget.addExpense(text);
-                          _controller.clear();
-                          _onMessageSent();
-                        }
-                      },
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'What\'s the expense?',
-                  filled: true,
-                  fillColor: Colors.white,
+                child: TextField(
+                  autofocus: false,
+                  controller: _controller,
+                  onSubmitted: (widget.isDisabled ||
+                          _remainingMessages <= 0 && !_isPremium)
+                      ? null
+                      : (value) {
+                          _onSendPressed();
+                        },
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'What\'s the expense?',
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
                 ),
-              )),
+              ),
+              // Manual create expense button
               Padding(
                 padding: const EdgeInsets.only(left: 2.0),
                 child: Container(
                   height: 50,
-                  width: 60,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  child: IconButton(
+                    color: Colors.white,
+                    tooltip: 'Manually create expense',
+                    onPressed: _showCreateExpenseForm,
+                    icon: const Icon(Icons.add),
+                  ),
+                ),
+              ),
+              // AI message send button
+              Padding(
+                padding: const EdgeInsets.only(left: 2.0),
+                child: Container(
+                  height: 50,
+                  width: 50,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     color: (_remainingMessages <= 0 && !_isPremium)
@@ -139,16 +181,12 @@ class _AIMessageInputState extends State<AIMessageInput> {
                     children: [
                       IconButton(
                         color: Colors.white,
-                        onPressed: (widget.disabled == true ||
+                        tooltip: 'Send AI message',
+                        onPressed: (widget.isDisabled ||
                                 _remainingMessages <= 0 && !_isPremium)
                             ? null
-                            : () async {
-                                final text = _controller.text.trim();
-                                if (text.isNotEmpty) {
-                                  widget.addExpense(text);
-                                  _controller.clear();
-                                  _onMessageSent();
-                                }
+                            : () {
+                                _onSendPressed();
                               },
                         icon: const Icon(Icons.send),
                       ),

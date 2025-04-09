@@ -50,6 +50,7 @@ dependencies:
   firebase_ui_oauth_google: ^1.2.15
   shared_preferences: ^2.2.2
   in_app_purchase: ^3.1.13
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:
