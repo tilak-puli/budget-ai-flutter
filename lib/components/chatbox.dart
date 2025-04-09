@@ -32,7 +32,9 @@ class Chatbox extends StatelessWidget {
                     .toList()),
           ),
         )),
-        AIMessageInput((message) => onAddMessage(message, chatStore), disabled: chatStore.history.messages.last is AILoading)
+        AIMessageInput((message) => onAddMessage(message, chatStore),
+            disabled: chatStore.history.messages.isNotEmpty &&
+                chatStore.history.messages.last is AILoading)
       ]);
     });
   }

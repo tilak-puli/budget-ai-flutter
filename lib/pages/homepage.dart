@@ -4,16 +4,18 @@ import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/screens/subscription_screen.dart';
+import 'package:budget_ai/screens/profile_screen.dart';
+import 'package:budget_ai/services/subscription_service.dart';
 import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/utils/time.dart';
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/src/response.dart';
 import 'dart:convert';
+import 'dart:math';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 var todayDate = DateTime.now();
@@ -45,6 +47,9 @@ class _MyHomePageState extends State<MyHomePage> {
   late Future<Expenses> futureExpenses;
   late ExpenseStore expenseStore;
   late ChatStore chatStore;
+  final SubscriptionService _subscriptionService = SubscriptionService();
+  bool _isSubscriptionInitialized = false;
+  bool _isPremium = false;
 
   DateTime fromDate = getMonthStart(todayDate);
   DateTime toDate = getMonthEnd(todayDate);
@@ -103,16 +108,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
     try {
       response = await ApiService().addExpense(userMessage, date);
+      print("API response status: ${response.statusCode}");
     } catch (e) {
+      print("API error: $e");
       return Exception("Something went wrong while connecting to server");
     }
 
     if (response.statusCode == 200) {
-      return Expense.fromJson(jsonDecode(response.body));
+      try {
+        var jsonData = jsonDecode(response.body);
+        print(
+            "Received expense data: ${jsonData.toString().substring(0, min(50, jsonData.toString().length))}...");
+        return Expense.fromJson(jsonData);
+      } catch (e) {
+        print("Error parsing expense: $e");
+        return "Failed to parse the expense data";
+      }
     } else if (response.statusCode == 401) {
-      return jsonDecode(response.body)["errorMessage"] ??
+      var errorMsg = jsonDecode(response.body)["errorMessage"] ??
           "Something went wrong while adding";
+      print("Auth error: $errorMsg");
+      return errorMsg;
     } else {
+      print("API failure: ${response.statusCode}");
       throw Exception('Failed to add expense');
     }
   }
@@ -122,6 +140,14 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Initialize subscription service
+      await _subscriptionService.initializeSubscriptions();
+      final isPremium = await _subscriptionService.isPremium();
+      setState(() {
+        _isSubscriptionInitialized = true;
+        _isPremium = isPremium;
+      });
+
       Expenses expenses = await getExpensesFromStorage();
       expenseStore.setExpenses(expenses);
       addChatMessages(expenses);
@@ -159,6 +185,14 @@ class _MyHomePageState extends State<MyHomePage> {
       return null;
     }
 
+    // Check if user can send message
+    bool canSend = await _subscriptionService.canSendMessage();
+    if (!canSend) {
+      chatStore.addAtStart(TextMessage(false,
+          "You've reached your daily message limit. Upgrade to premium for unlimited messages."));
+      return null;
+    }
+
     try {
       chatStore.addAtStart(TextMessage(true, userMessage));
       chatStore.addAtStart(AILoading());
@@ -167,13 +201,19 @@ class _MyHomePageState extends State<MyHomePage> {
       // EasyLoading.dismiss();
 
       if (expense is Expense) {
+        // Add the expense to the UI first
         chatStore.addAtStart(ExpenseMessage(expense));
         expenseStore.add(expense);
         storeExpensesInStorage(expenseStore.expenses);
 
+        // Increment message count ONLY after successful expense creation
+        await _subscriptionService.incrementMessageCount();
+
+        print("Successfully added expense: ${expense.id}");
         return expense;
       }
 
+      // If we get here, the expense wasn't successfully created
       chatStore.addAtStart(TextMessage(false, expense as String));
       return null;
     } catch (e) {
@@ -188,6 +228,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _showSubscriptionDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     expenseStore = Provider.of<ExpenseStore>(context, listen: true);
@@ -197,25 +244,54 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        title: Text(widget.title),
+        title: Row(
+          children: [
+            Text(widget.title),
+            if (_isPremium)
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Icon(
+                  Icons.workspace_premium,
+                  size: 18,
+                  color: Colors.amber,
+                ),
+              ),
+          ],
+        ),
         leading: LeadingActions(fromDate, toDate, updateTimeFrame),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.diamond_outlined),
+            onPressed: _showSubscriptionDialog,
+            tooltip: 'Upgrade to Premium',
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) async {
+              if (value == 'reset_count') {
+                // Reset message count for testing (DEV ONLY)
+                await _subscriptionService.resetMessageCount();
+                // Show a snackbar confirmation
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Message count reset for testing')),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'reset_count',
+                child: Text('Reset Message Count (DEV)'),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute<ProfileScreen>(
-                  builder: (context) => ProfileScreen(
-                    appBar: AppBar(
-                      title: const Text('User Profile'),
-                    ),
-                    actions: [
-                      SignedOutAction((context) {
-                        Navigator.of(context).pop();
-                      })
-                    ],
-                  ),
+                MaterialPageRoute(
+                  builder: (context) => const CustomProfileScreen(),
                 ),
               );
             },
