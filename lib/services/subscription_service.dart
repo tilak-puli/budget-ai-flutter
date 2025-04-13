@@ -12,6 +12,12 @@ class SubscriptionService {
   static const int _freeMessageLimit = 5;
   static const int _premiumMessageLimit = 100;
 
+  // Subscription Product IDs
+  static const Set<String> _kIds = <String>{
+    'premium_monthly', // Monthly subscription ID
+    'premium_yearly', // Yearly subscription ID
+  };
+
   // API endpoints
   static const String _baseUrl = 'https://backend-2xqnus4dqq-uc.a.run.app';
   static const String _subscriptionStatusEndpoint = '/subscriptions/status';
@@ -352,23 +358,57 @@ class SubscriptionService {
         date1.day == date2.day;
   }
 
+  // Initialize subscriptions
   Future<void> initializeSubscriptions() async {
-    final available = await _inAppPurchase.isAvailable();
-    if (!available) return;
-
-    // Define product IDs
-    const Set<String> _kIds = {
-      'budget_ai_premium_monthly',
-      'budget_ai_premium_yearly'
-    };
-    final ProductDetailsResponse response =
-        await _inAppPurchase.queryProductDetails(_kIds);
-
-    if (response.notFoundIDs.isNotEmpty) {
-      print('Some products not found: ${response.notFoundIDs}');
+    final bool available = await _inAppPurchase.isAvailable();
+    if (!available) {
+      print('Store not available');
+      return;
     }
 
-    _products = response.productDetails;
+    try {
+      final ProductDetailsResponse response =
+          await _inAppPurchase.queryProductDetails(_kIds);
+
+      if (response.notFoundIDs.isNotEmpty) {
+        print('Some product IDs not found: ${response.notFoundIDs}');
+      }
+
+      _products = response.productDetails;
+      print('Found ${_products.length} products:');
+      for (final product in _products) {
+        print('Product: ${product.id} - ${product.title} - ${product.price}');
+      }
+    } catch (e) {
+      print('Error initializing subscriptions: $e');
+    }
+  }
+
+  // Get available subscription products
+  Future<List<ProductDetails>> getAvailableSubscriptions() async {
+    if (_products.isEmpty) {
+      await initializeSubscriptions();
+    }
+    return _products;
+  }
+
+  // Purchase a subscription
+  Future<bool> purchaseSubscription(ProductDetails product) async {
+    try {
+      final PurchaseParam purchaseParam = PurchaseParam(
+        productDetails: product,
+      );
+
+      final bool success = await _inAppPurchase.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
+
+      print('Purchase initiated: $success');
+      return success;
+    } catch (e) {
+      print('Error purchasing subscription: $e');
+      return false;
+    }
   }
 
   // Get remaining message count for the current day
@@ -421,14 +461,6 @@ class SubscriptionService {
       final isPremiumUser = await isPremium();
       return isPremiumUser ? _premiumMessageLimit : _freeMessageLimit;
     }
-  }
-
-  // Get available subscription products
-  Future<List<ProductDetails>> getAvailableSubscriptions() async {
-    if (_products.isEmpty) {
-      await initializeSubscriptions();
-    }
-    return _products;
   }
 
   // Cleanup

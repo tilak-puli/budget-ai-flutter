@@ -4,6 +4,10 @@ import 'package:budget_ai/services/subscription_service.dart';
 import 'package:budget_ai/theme/index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:budget_ai/state/expense_store.dart';
+import 'package:budget_ai/models/expense_list.dart';
 
 class CustomProfileScreen extends StatefulWidget {
   const CustomProfileScreen({super.key});
@@ -41,9 +45,35 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
   }
 
   void _signOut() async {
-    await FirebaseAuth.instance.signOut();
-    if (mounted) {
-      Navigator.of(context).pop();
+    try {
+      print("\n------- SIGNING OUT -------");
+      // Clear local storage first
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove("expenses");
+      print("Cleared local expenses");
+
+      // Clear expense store if available
+      if (mounted) {
+        final expenseStore = Provider.of<ExpenseStore>(context, listen: false);
+        expenseStore.setExpenses(Expenses(List.empty()));
+        print("Reset expense store");
+      }
+
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+      print("Signed out from Firebase");
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      print("------- SIGN OUT COMPLETE -------\n");
+    } catch (e) {
+      print("Error during sign out: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing out: $e')),
+        );
+      }
     }
   }
 

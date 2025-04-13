@@ -222,15 +222,15 @@ class _MyHomePageState extends State<MyHomePage> {
     for (var expense in expenses.list) {
       if (count >= 10) break; // Limit to 10 expenses
 
-      // Add the expense message
-      chatStore.addAtStart(ExpenseMessage(expense));
-      count++;
-
       // Add the prompt if it exists
       if (expense.prompt != null && expense.prompt!.isNotEmpty) {
         chatStore.addAtStart(TextMessage(true, expense.prompt!));
         count++;
       }
+
+      // Add the expense message
+      chatStore.addAtStart(ExpenseMessage(expense));
+      count++;
     }
 
     print("Added $count messages to chat");
@@ -360,9 +360,19 @@ class _MyHomePageState extends State<MyHomePage> {
       Expenses localExpenses = await getExpensesFromStorage();
       print("Loaded ${localExpenses.list.length} expenses from local storage");
 
-      // Set the expenses in the store immediately
+      // Set the expenses in the store immediately and add to chat
       print("Setting expenses in the store...");
       expenseStore.setExpenses(localExpenses);
+      expenseStore.loading =
+          false; // Set loading to false after setting local expenses
+
+      // Add local expenses to chat immediately
+      if (!localExpenses.isEmpty) {
+        print("Adding local expenses to chat history...");
+        addChatMessages(localExpenses);
+      } else {
+        print("No local expenses to add to chat");
+      }
 
       // Now that we've shown the local data, start fetching from the server
       try {
@@ -372,6 +382,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         print("Fetching expenses from server...");
         // Then fetch expenses - this will replace the local expenses with server data
+        // Don't show loading indicator since we're already showing local data
         await refreshExpenses(showLoading: false);
 
         print("Successfully refreshed data from server");
@@ -380,14 +391,6 @@ class _MyHomePageState extends State<MyHomePage> {
         // If server calls fail, at least we've shown the local data
         // Initialize subscription locally as fallback
         await _initializeSubscriptionLocally();
-
-        // Only add messages to chat if server fetch failed
-        if (!localExpenses.isEmpty) {
-          print("Adding local expenses to chat history...");
-          addChatMessages(localExpenses);
-        } else {
-          print("No local expenses to add to chat");
-        }
       }
 
       print("------- APP INITIALIZATION COMPLETE -------\n");
@@ -480,7 +483,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Expenses> refreshExpenses({bool showLoading = true}) {
-    setState(() => {});
+    if (showLoading) {
+      expenseStore.loading = true;
+    }
     futureExpenses = fetchExpenses(showLoading: showLoading);
     return futureExpenses;
   }
@@ -632,12 +637,14 @@ class _MyHomePageState extends State<MyHomePage> {
     chatStore = Provider.of<ChatStore>(context, listen: true);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = Colors.white; // Icons are white on purple background
+    final backgroundColor = isDark
+        ? NeumorphicColors.darkPrimaryBackground
+        : NeumorphicColors.lightPrimaryBackground;
 
     return Scaffold(
       appBar: NeumorphicAppBar(
         title: widget.title,
-        useAccentColor: true, // Use the purple background
+        useAccentColor: true, // Use the blue background
         showShadow: false, // No shadow for clean look
         elevation: 0,
         leading: LeadingActions(fromDate, toDate,
@@ -645,11 +652,13 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: isDark
+                ? NeumorphicColors.darkAccent.withOpacity(0.3)
+                : Colors.white.withOpacity(0.2),
             child: IconButton(
               icon: Icon(
                 Icons.diamond_outlined,
-                color: Colors.white,
+                color: isDark ? NeumorphicColors.darkAccent : Colors.white,
                 size: 18,
               ),
               onPressed: _showSubscriptionDialog,
@@ -660,11 +669,13 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(width: 8),
           CircleAvatar(
             radius: 18,
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: isDark
+                ? NeumorphicColors.darkAccent.withOpacity(0.3)
+                : Colors.white.withOpacity(0.2),
             child: IconButton(
               icon: Icon(
                 Icons.person,
-                color: Colors.white,
+                color: isDark ? NeumorphicColors.darkAccent : Colors.white,
                 size: 18,
               ),
               onPressed: () {
@@ -683,227 +694,224 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: Container(
-        color: isDark
-            ? NeumorphicColors.darkPrimaryBackground
-            : NeumorphicColors.lightPrimaryBackground,
-        // Remove SafeArea completely to allow background to extend to screen edges
+        color: backgroundColor,
         child: Stack(
           children: [
-            expenseStore.loading
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-                    children: [
-                      // Unified budget card combining both date selection and budget info
-                      Consumer<ExpenseStore>(
-                        builder: (context, expenseStore, _) {
-                          // Calculate budget percentage if budget has a valid total
-                          double percentUsed = 0.0;
-                          if (expenseStore.budget.total > 0) {
-                            percentUsed = (expenseStore.expenses.total /
-                                    expenseStore.budget.total)
-                                .clamp(0.0, 1.0);
-                          }
+            // Show content even when loading, just add loading indicator on top
+            Column(
+              children: [
+                // Unified budget card combining both date selection and budget info
+                Consumer<ExpenseStore>(
+                  builder: (context, expenseStore, _) {
+                    // Calculate budget percentage if budget has a valid total
+                    double percentUsed = 0.0;
+                    if (expenseStore.budget.total > 0) {
+                      percentUsed = (expenseStore.expenses.total /
+                              expenseStore.budget.total)
+                          .clamp(0.0, 1.0);
+                    }
 
-                          final remaining = expenseStore.budget.total -
-                              expenseStore.expenses.total;
-                          final percentDisplay =
-                              "${(percentUsed * 100).toStringAsFixed(0)}%";
-                          final total = expenseStore.expenses.total;
+                    final remaining =
+                        expenseStore.budget.total - expenseStore.expenses.total;
+                    final percentDisplay =
+                        "${(percentUsed * 100).toStringAsFixed(0)}%";
+                    final total = expenseStore.expenses.total;
 
-                          return Container(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16.0, vertical: 16.0),
-                            decoration: NeumorphicBox.decoration(
-                              context: context,
-                              color: isDark
-                                  ? NeumorphicColors.darkCardBackground
-                                  : NeumorphicColors.lightCardBackground,
-                              borderRadius: 16.0,
-                              depth:
-                                  8.0, // Increased depth for more prominent shadow
-                              intensity: 0.9, // Higher intensity shadow
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16.0),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    (isDark
-                                            ? NeumorphicColors
-                                                .darkCardBackground
-                                            : NeumorphicColors
-                                                .lightCardBackground)
-                                        .withOpacity(1.0),
-                                    (isDark
-                                        ? NeumorphicColors.darkCardBackground
-                                            .withOpacity(0.9)
-                                        : NeumorphicColors.lightCardBackground
-                                            .withOpacity(0.92)),
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : Colors.black.withOpacity(0.03),
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Total spent this month
-                                    Text(
-                                      fromDate.year == todayDate.year
-                                          ? '${monthFormat.format(fromDate)} month'
-                                          : '${monthAndYearFormat.format(fromDate)} month',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDark
-                                            ? NeumorphicColors.darkTextSecondary
-                                            : NeumorphicColors
-                                                .lightTextSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      currencyFormat.format(total),
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark
-                                            ? NeumorphicColors.darkTextPrimary
-                                            : NeumorphicColors.lightTextPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-
-                                    // Budget info
-                                    Text(
-                                      "Monthly Budget",
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDark
-                                            ? NeumorphicColors.darkTextSecondary
-                                            : NeumorphicColors
-                                                .lightTextSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-
-                                    // Progress bar row
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Container(
-                                            height: 8,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              color: isDark
-                                                  ? Colors.white
-                                                      .withOpacity(0.1)
-                                                  : Colors.black
-                                                      .withOpacity(0.05),
-                                            ),
-                                            child: FractionallySizedBox(
-                                              widthFactor: percentUsed,
-                                              alignment: Alignment.centerLeft,
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                  gradient: LinearGradient(
-                                                    colors: [
-                                                      isDark
-                                                          ? NeumorphicColors
-                                                              .darkAccent
-                                                          : NeumorphicColors
-                                                              .lightAccent,
-                                                      isDark
-                                                          ? NeumorphicColors
-                                                              .darkSecondaryAccent
-                                                          : NeumorphicColors
-                                                              .lightSecondaryAccent,
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          percentDisplay,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? NeumorphicColors
-                                                    .darkTextPrimary
-                                                : NeumorphicColors
-                                                    .lightTextPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    // Remaining amount
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "Remaining",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: isDark
-                                                ? NeumorphicColors
-                                                    .darkTextPrimary
-                                                : NeumorphicColors
-                                                    .lightTextPrimary,
-                                          ),
-                                        ),
-                                        Text(
-                                          currencyFormat.format(remaining),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark
-                                                ? NeumorphicColors.darkAccent
-                                                : NeumorphicColors.lightAccent,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 16.0),
+                      decoration: NeumorphicBox.decoration(
+                        context: context,
+                        color: isDark
+                            ? NeumorphicColors.darkCardBackground
+                            : NeumorphicColors.lightCardBackground,
+                        borderRadius: 16.0,
+                        depth: 8.0, // Increased depth for more prominent shadow
+                        intensity: 0.9, // Higher intensity shadow
                       ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16.0),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              (isDark
+                                      ? NeumorphicColors.darkCardBackground
+                                      : NeumorphicColors.lightCardBackground)
+                                  .withOpacity(1.0),
+                              (isDark
+                                  ? NeumorphicColors.darkCardBackground
+                                      .withOpacity(0.9)
+                                  : NeumorphicColors.lightCardBackground
+                                      .withOpacity(0.92)),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.black.withOpacity(0.03),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Total spent this month
+                              Text(
+                                fromDate.year == todayDate.year
+                                    ? '${monthFormat.format(fromDate)} month'
+                                    : '${monthAndYearFormat.format(fromDate)} month',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark
+                                      ? NeumorphicColors.darkTextSecondary
+                                      : NeumorphicColors.lightTextSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                currencyFormat.format(total),
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? NeumorphicColors.darkTextPrimary
+                                      : NeumorphicColors.lightTextPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
 
-                      // Tabs section
-                      Expanded(
-                        child: BodyTabs(
-                          addExpense,
-                          quotaData: {
-                            'remainingMessages': _remainingMessages,
-                            'dailyLimit': _dailyMessageLimit,
-                            'isPremium': _isPremium,
-                          },
+                              // Budget info
+                              Text(
+                                "Monthly Budget",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark
+                                      ? NeumorphicColors.darkTextSecondary
+                                      : NeumorphicColors.lightTextSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+
+                              // Progress bar row
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(4),
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.1)
+                                            : Colors.black.withOpacity(0.05),
+                                      ),
+                                      child: FractionallySizedBox(
+                                        widthFactor: percentUsed,
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                isDark
+                                                    ? NeumorphicColors
+                                                        .darkAccent
+                                                    : NeumorphicColors
+                                                        .lightAccent,
+                                                isDark
+                                                    ? NeumorphicColors
+                                                        .darkSecondaryAccent
+                                                    : NeumorphicColors
+                                                        .lightSecondaryAccent,
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    percentDisplay,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? NeumorphicColors.darkTextPrimary
+                                          : NeumorphicColors.lightTextPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              // Remaining amount
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Remaining",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? NeumorphicColors.darkTextPrimary
+                                          : NeumorphicColors.lightTextPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    currencyFormat.format(remaining),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? NeumorphicColors.darkAccent
+                                          : NeumorphicColors.lightAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
+                    );
+                  },
+                ),
+
+                // Tabs section
+                Expanded(
+                  child: BodyTabs(
+                    addExpense,
+                    quotaData: {
+                      'remainingMessages': _remainingMessages,
+                      'dailyLimit': _dailyMessageLimit,
+                      'isPremium': _isPremium,
+                    },
                   ),
+                ),
+              ],
+            ),
+            // Show loading indicator as overlay
+            if (expenseStore.loading)
+              Container(
+                color: backgroundColor.withOpacity(0.7),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
           ],
         ),
+      ),
+      bottomNavigationBar: Container(
+        color: backgroundColor,
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+        child: const SizedBox(height: 0),
       ),
     );
   }

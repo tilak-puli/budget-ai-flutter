@@ -2,6 +2,7 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -156,8 +157,9 @@ class LoginScreen extends StatelessWidget {
                       color: const Color(0xFF4285F4),
                       child: OAuthProviderButton(
                         provider: GoogleProvider(
-                          clientId:
-                              "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com",
+                          clientId: Platform.isAndroid
+                              ? "706321535461-6n6h3ponqh88p0p3u02eds96o6v3ivs2.apps.googleusercontent.com" // SHA-1 specific client ID
+                              : "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com", // Web client ID
                         ),
                         variant: OAuthButtonVariant.icon_and_text,
                       ),

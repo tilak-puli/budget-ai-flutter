@@ -67,18 +67,23 @@ class TextMessage extends ChatMessage {
     // User messages use accent color in light/dark modes, AI messages match card background
     final messageColor = isUserMessage
         ? isDark
-            ? Color(0xFF3D7EAA) // Dark blue for user messages in dark mode
-            : Color(0xFFD5EFFA) // Light blue for user messages in light mode
+            ? NeumorphicColors
+                .darkAccent // Blue accent for user messages in dark mode
+            : NeumorphicColors.lightAccent
+                .withOpacity(0.15) // Light blue background for user messages
         : isDark
             ? NeumorphicColors.darkCardBackground
             : Colors.white;
 
     // Text color based on background contrast
-    final textColor = isUserMessage && isDark
-        ? Colors.white // White text on dark blue background
+    final textColor = isUserMessage
+        ? isDark
+            ? Colors.white // White text on dark blue background
+            : NeumorphicColors.lightTextPrimary // Blue text on light background
         : isDark
             ? Colors.white // White text on dark cards
-            : Colors.black87; // Dark text on light backgrounds
+            : NeumorphicColors
+                .lightTextPrimary; // Dark text on light backgrounds
 
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
@@ -86,9 +91,9 @@ class TextMessage extends ChatMessage {
         decoration: NeumorphicBox.decoration(
           context: GlobalKey().currentContext ?? GlobalContext.context,
           color: messageColor,
-          borderRadius: 12.0,
-          depth: 4.0,
-          intensity: isDark ? 0.4 : 0.8, // Lower intensity for dark mode
+          borderRadius: 16.0, // Increased border radius for modern look
+          depth: isDark ? 2.0 : 4.0, // Reduced depth in dark mode
+          intensity: isDark ? 0.2 : 0.4, // Lower intensity for subtle effect
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
