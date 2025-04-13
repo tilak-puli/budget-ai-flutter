@@ -1,20 +1,14 @@
 import 'dart:math' as math;
-
+import 'package:budget_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 
 class TypingIndicator extends StatefulWidget {
   const TypingIndicator({
     super.key,
     this.showIndicator = false,
-    this.bubbleColor = const Color.fromRGBO(239, 244, 248, 1),
-    this.flashingCircleDarkColor = const Color(0xFF333333),
-    this.flashingCircleBrightColor = const Color(0xFFaec1dd),
   });
 
   final bool showIndicator;
-  final Color bubbleColor;
-  final Color flashingCircleDarkColor;
-  final Color flashingCircleBrightColor;
 
   @override
   State<TypingIndicator> createState() => _TypingIndicatorState();
@@ -23,14 +17,12 @@ class TypingIndicator extends StatefulWidget {
 class _TypingIndicatorState extends State<TypingIndicator>
     with TickerProviderStateMixin {
   late AnimationController _appearanceController;
-
   late Animation<double> _indicatorSpaceAnimation;
-
   late Animation<double> _smallBubbleAnimation;
   late Animation<double> _mediumBubbleAnimation;
   late Animation<double> _largeBubbleAnimation;
-
   late AnimationController _repeatingController;
+
   final List<Interval> _dotIntervals = const [
     Interval(0.25, 0.8),
     Interval(0.35, 0.9),
@@ -118,18 +110,25 @@ class _TypingIndicatorState extends State<TypingIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? NeumorphicColors.darkPrimaryBackground
+        : NeumorphicColors.lightPrimaryBackground;
+    final bubbleColor =
+        isDark ? NeumorphicColors.darkCardBackground : Colors.white;
+    final dotDarkColor = isDark ? Colors.grey[600]! : const Color(0xFF333333);
+    final dotBrightColor = isDark ? Colors.grey[400]! : const Color(0xFF6B8AFD);
+
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
+      margin: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 0.0),
       alignment: Alignment.centerLeft,
       child: AnimatedBuilder(
         animation: _indicatorSpaceAnimation,
         builder: (context, child) {
-          return Material(
-            elevation: 1.0,
-            borderRadius: BorderRadius.circular(18.0),
-            color: Colors.white,
+          return Container(
+            color: backgroundColor,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: SizedBox(
                 height: math.max(18, _indicatorSpaceAnimation.value),
                 child: child,
@@ -145,7 +144,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
               bottom: 8,
               bubble: CircleBubble(
                 size: 8,
-                bubbleColor: widget.bubbleColor,
+                bubbleColor: bubbleColor,
               ),
             ),
             AnimatedBubble(
@@ -154,7 +153,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
               bottom: 10,
               bubble: CircleBubble(
                 size: 10,
-                bubbleColor: widget.bubbleColor,
+                bubbleColor: bubbleColor,
               ),
             ),
             AnimatedBubble(
@@ -164,9 +163,9 @@ class _TypingIndicatorState extends State<TypingIndicator>
               bubble: StatusBubble(
                 repeatingController: _repeatingController,
                 dotIntervals: _dotIntervals,
-                flashingCircleDarkColor: widget.flashingCircleDarkColor,
-                flashingCircleBrightColor: widget.flashingCircleBrightColor,
-                bubbleColor: widget.bubbleColor,
+                flashingCircleDarkColor: dotDarkColor,
+                flashingCircleBrightColor: dotBrightColor,
+                bubbleColor: bubbleColor,
               ),
             ),
           ],

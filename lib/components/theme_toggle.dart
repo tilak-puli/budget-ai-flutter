@@ -40,68 +40,58 @@ class ThemeToggleSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeColor =
-        isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
-    final inactiveColor = isDark
-        ? NeumorphicColors.darkPrimaryBackground
-        : NeumorphicColors.lightPrimaryBackground;
+    final activeColor = isDark ? Colors.amber : Colors.indigo;
 
     return GestureDetector(
       onTap: onToggle,
       child: Container(
-        width: 70,
+        width: 80,
         height: 36,
-        decoration: NeumorphicBox.decoration(
-          context: context,
-          borderRadius: 18,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: isDark ? Colors.grey[800]!.withOpacity(0.3) : Colors.grey[200],
         ),
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(3),
         child: Stack(
           children: [
-            // Background icons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Icon(
-                    Icons.light_mode,
-                    size: 16,
-                    color: isDarkMode
-                        ? Theme.of(context).textTheme.labelMedium?.color
-                        : activeColor,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Icon(
-                    Icons.dark_mode,
-                    size: 16,
-                    color: isDarkMode
-                        ? activeColor
-                        : Theme.of(context).textTheme.labelMedium?.color,
-                  ),
-                ),
-              ],
+            // Static icons
+            Positioned(
+              right: 12,
+              top: 7,
+              child: Icon(
+                Icons.dark_mode,
+                size: 16,
+                color: isDarkMode ? activeColor : Colors.grey[500],
+              ),
             ),
             // Animated thumb
             AnimatedPositioned(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
-              left: isDarkMode ? 36 : 0,
+              left: isDarkMode ? 44 : 3,
               child: Container(
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
-                  color: inactiveColor,
+                  color: Colors.white,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
                       blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      offset: const Offset(0, 2),
                     ),
                   ],
+                ),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: Icon(
+                      isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                      size: 16,
+                      color: activeColor,
+                    ),
+                  ),
                 ),
               ),
             ),

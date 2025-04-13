@@ -200,6 +200,12 @@ class _AIMessageInputState extends State<AIMessageInput> {
                   context: context,
                   controller: _controller,
                   hintText: "What's the expense?",
+                  prefixIcon: Icon(
+                    Icons.message_outlined,
+                    color: isDark
+                        ? NeumorphicColors.darkTextSecondary
+                        : NeumorphicColors.lightTextSecondary,
+                  ),
                   onSubmitted: (widget.isDisabled ||
                           _remainingMessages <= 0 && !_isPremium)
                       ? null
@@ -215,7 +221,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
               NeumorphicComponents.circularButton(
                 context: context,
                 size: 48,
-                depth: 6.0,
+                depth: 4.0,
                 color: Theme.of(context)
                     .colorScheme
                     .secondary
@@ -234,7 +240,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
               NeumorphicComponents.circularButtonWithBadge(
                 context: context,
                 size: 48,
-                depth: 6.0,
+                depth: 4.0,
                 color: (_remainingMessages <= 0 && !_isPremium)
                     ? Colors.grey.withOpacity(0.3)
                     : accentColor.withOpacity(isDark ? 0.3 : 0.1),

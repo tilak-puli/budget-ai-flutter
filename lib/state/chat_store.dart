@@ -1,6 +1,7 @@
 import 'package:budget_ai/components/expense_card.dart';
 import 'package:budget_ai/components/typing_indicator.dart';
 import 'package:budget_ai/models/expense.dart';
+import 'package:budget_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 
 class ChatStore extends ChangeNotifier {
@@ -57,19 +58,45 @@ class TextMessage extends ChatMessage {
 
   @override
   Widget render() {
+    final isDark = GlobalKey().currentContext != null
+        ? Theme.of(GlobalKey().currentContext!).brightness == Brightness.dark
+        : (GlobalContext.context != null
+            ? Theme.of(GlobalContext.context).brightness == Brightness.dark
+            : false);
+
+    // User messages use accent color in light/dark modes, AI messages match card background
+    final messageColor = isUserMessage
+        ? isDark
+            ? Color(0xFF3D7EAA) // Dark blue for user messages in dark mode
+            : Color(0xFFD5EFFA) // Light blue for user messages in light mode
+        : isDark
+            ? NeumorphicColors.darkCardBackground
+            : Colors.white;
+
+    // Text color based on background contrast
+    final textColor = isUserMessage && isDark
+        ? Colors.white // White text on dark blue background
+        : isDark
+            ? Colors.white // White text on dark cards
+            : Colors.black87; // Dark text on light backgrounds
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
-      child: Material(
-        elevation: 1.0,
-        borderRadius: BorderRadius.circular(12.0),
-        color: isUserMessage ? Color(0xFFD5EFFA) : Colors.white,
+      child: Container(
+        decoration: NeumorphicBox.decoration(
+          context: GlobalKey().currentContext ?? GlobalContext.context,
+          color: messageColor,
+          borderRadius: 12.0,
+          depth: 4.0,
+          intensity: isDark ? 0.4 : 0.8, // Lower intensity for dark mode
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
           child: Text(
             text,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.black87,
+              color: textColor,
             ),
           ),
         ),
@@ -85,12 +112,22 @@ class ExpenseMessage extends ChatMessage {
 
   @override
   Widget render() {
+    final isDark = GlobalKey().currentContext != null
+        ? Theme.of(GlobalKey().currentContext!).brightness == Brightness.dark
+        : (GlobalContext.context != null
+            ? Theme.of(GlobalContext.context).brightness == Brightness.dark
+            : false);
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
-      child: Material(
-        elevation: 1.0,
-        borderRadius: BorderRadius.circular(12.0),
-        color: Colors.white,
+      child: Container(
+        decoration: NeumorphicBox.decoration(
+          context: GlobalKey().currentContext ?? GlobalContext.context,
+          color: isDark ? NeumorphicColors.darkCardBackground : Colors.white,
+          borderRadius: 12.0,
+          depth: 4.0,
+          intensity: isDark ? 0.4 : 0.8, // Lower intensity for dark mode
+        ),
         child: Padding(
           padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
           child: ExpenseCard(
@@ -141,4 +178,9 @@ class ChatHistory {
   void remove(String expenseId) {
     messages.removeWhere((element) => element.expenseId == expenseId);
   }
+}
+
+// Add this class to provide context for NeumorphicBox when needed
+class GlobalContext {
+  static late BuildContext context;
 }

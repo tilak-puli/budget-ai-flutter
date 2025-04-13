@@ -66,57 +66,74 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       print("\n------- FETCH EXPENSES FROM SERVER -------");
       print(
+          "Current local expense count: ${expenseStore.expenses.list.length}");
+      print("Current chat message count: ${chatStore.history.messages.length}");
+      print(
           "Fetching expenses from server for ${fromDate.toIso8601String()} to ${toDate.toIso8601String()}");
       response = await ApiService().fetchExpenses(fromDate, toDate);
       print("Fetch response status: ${response.statusCode}");
 
-      // Log the response size
-      print("Response body length: ${response.body.length} characters");
-
       if (response.statusCode == 200) {
         try {
           var jsonData = jsonDecode(response.body) as List<dynamic>;
+          print("\nServer Response Analysis:");
           print("Server returned ${jsonData.length} expenses");
-
-          // Log the IDs of server expenses
-          final serverIds =
-              jsonData.map((item) => item['_id'].toString()).toList();
-          print("Server expense IDs: ${serverIds.join(', ')}");
 
           // Parse server expenses
           var serverExpenses = Expenses.fromJson(jsonData);
           expenseStore.loading = false;
 
-          // Check for duplicate IDs in server response
-          final serverExpenseIds = <String>{};
-          final duplicates = <String>[];
-          for (var expense in serverExpenses.list) {
-            if (serverExpenseIds.contains(expense.id)) {
-              duplicates.add(expense.id);
-            } else {
-              serverExpenseIds.add(expense.id);
-            }
-          }
-
-          if (duplicates.isNotEmpty) {
+          // Log expense IDs and details for debugging
+          print("\nServer Expenses Details:");
+          for (var expense in serverExpenses.list.take(5)) {
             print(
-                "WARNING: Found duplicate IDs in server response: ${duplicates.join(', ')}");
+                "ID: ${expense.id}, Amount: ${expense.amount}, Date: ${expense.datetime}, Category: ${expense.category}, Description: ${expense.description}");
+          }
+          if (serverExpenses.list.length > 5) {
+            print("... and ${serverExpenses.list.length - 5} more expenses");
           }
 
-          // Create a Set of IDs from server expenses for quick lookup
-          final serverExpenseIdSet = serverExpenseIds.toSet();
+          // Create a function to compare expenses
+          bool expensesMatch(Expense a, Expense b) {
+            return a.amount == b.amount &&
+                a.category == b.category &&
+                a.description == b.description &&
+                a.datetime.difference(b.datetime).inSeconds.abs() <
+                    2; // Allow 2 second difference
+          }
 
           // Find expenses in local store that don't exist on server
-          // These might be expenses added while offline
           final localExpenses = expenseStore.expenses.list;
-          final localOnlyExpenses = localExpenses
-              .where((expense) => !serverExpenseIdSet.contains(expense.id))
-              .toList();
+          print("\nLocal Store Analysis:");
+          print("Local store has ${localExpenses.length} expenses");
 
-          if (localOnlyExpenses.isNotEmpty) {
+          // Log local expense details for debugging
+          print("\nLocal Expenses Details:");
+          for (var expense in localExpenses.take(5)) {
             print(
-                "Found ${localOnlyExpenses.length} local expenses not on server");
-            // Combine server expenses with local-only expenses
+                "ID: ${expense.id}, Amount: ${expense.amount}, Date: ${expense.datetime}, Category: ${expense.category}, Description: ${expense.description}");
+          }
+          if (localExpenses.length > 5) {
+            print("... and ${localExpenses.length - 5} more expenses");
+          }
+
+          // Find truly unique local expenses
+          final localOnlyExpenses = localExpenses.where((localExp) {
+            return !serverExpenses.list
+                .any((serverExp) => expensesMatch(localExp, serverExp));
+          }).toList();
+
+          print("\nMerging Process:");
+          print(
+              "Found ${localOnlyExpenses.length} truly unique local-only expenses");
+          if (localOnlyExpenses.isNotEmpty) {
+            print("Unique local-only expense details:");
+            for (var expense in localOnlyExpenses) {
+              print(
+                  "ID: ${expense.id}, Amount: ${expense.amount}, Category: ${expense.category}, Description: ${expense.description}");
+            }
+
+            // Combine server expenses with unique local-only expenses
             final combinedList = [...serverExpenses.list, ...localOnlyExpenses];
             // Sort by date, newest first
             combinedList.sort((a, b) => b.datetime.compareTo(a.datetime));
@@ -124,38 +141,45 @@ class _MyHomePageState extends State<MyHomePage> {
             // Create a combined expenses list
             final combinedExpenses = Expenses(combinedList);
 
-            print(
-                "Combined ${serverExpenses.list.length} server expenses with ${localOnlyExpenses.length} local-only expenses");
+            print("\nFinal Result:");
+            print("Server expenses: ${serverExpenses.list.length}");
+            print("Unique local-only expenses: ${localOnlyExpenses.length}");
+            print("Total combined: ${combinedExpenses.list.length}");
 
             // Update the store with combined expenses
             expenseStore.setExpenses(combinedExpenses);
-
-            // Store combined expenses locally
             storeExpensesInStorage(combinedExpenses);
 
             // Update chat with combined data
+            print("\nChat Update:");
+            print(
+                "Previous chat message count: ${chatStore.history.messages.length}");
+            chatStore.clear();
             if (combinedExpenses.list.isNotEmpty) {
-              chatStore.clear();
               addChatMessages(combinedExpenses);
             }
+            print(
+                "New chat message count: ${chatStore.history.messages.length}");
 
             print("------- END FETCH EXPENSES -------\n");
             return combinedExpenses;
           } else {
-            // No local-only expenses to preserve
-            print("No local-only expenses found to preserve");
-            print(
-                "Replacing local expenses with ${serverExpenses.list.length} server expenses");
-            expenseStore.setExpenses(serverExpenses);
+            print("\nNo unique local-only expenses found");
+            print("Using server expenses only: ${serverExpenses.list.length}");
 
-            // Store server expenses locally
+            expenseStore.setExpenses(serverExpenses);
             storeExpensesInStorage(serverExpenses);
 
             // Update chat with server data
+            print("\nChat Update:");
+            print(
+                "Previous chat message count: ${chatStore.history.messages.length}");
+            chatStore.clear();
             if (serverExpenses.list.isNotEmpty) {
-              chatStore.clear();
               addChatMessages(serverExpenses);
             }
+            print(
+                "New chat message count: ${chatStore.history.messages.length}");
           }
 
           print("------- END FETCH EXPENSES -------\n");
@@ -184,24 +208,34 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void addChatMessages(Expenses expenses) {
     if (expenses.isEmpty) {
-      chatStore.addMessage(TextMessage(true,
+      chatStore.addAtStart(TextMessage(true,
           "Just send a message loosely describing your expense to start your finance journey with AI."));
+      print("Added welcome message to empty chat");
       return;
     }
+
+    print("\n------- ADDING CHAT MESSAGES -------");
+    print("Total expenses available: ${expenses.list.length}");
 
     // Add the 10 most recent expenses to the chat
     int count = 0;
     for (var expense in expenses.list) {
-      chatStore.addMessage(ExpenseMessage(expense));
-      if (expense.prompt != null && expense.prompt!.isNotEmpty) {
-        chatStore.addMessage(TextMessage(true, expense.prompt!));
-      }
-
-      count++;
       if (count >= 10) break; // Limit to 10 expenses
+
+      // Add the expense message
+      chatStore.addAtStart(ExpenseMessage(expense));
+      count++;
+
+      // Add the prompt if it exists
+      if (expense.prompt != null && expense.prompt!.isNotEmpty) {
+        chatStore.addAtStart(TextMessage(true, expense.prompt!));
+        count++;
+      }
     }
 
-    print("Added $count expenses to chat history");
+    print("Added $count messages to chat");
+    print("Final chat message count: ${chatStore.history.messages.length}");
+    print("------- FINISHED ADDING CHAT MESSAGES -------\n");
   }
 
   Future<Object> postExpense(userMessage) async {
@@ -330,14 +364,6 @@ class _MyHomePageState extends State<MyHomePage> {
       print("Setting expenses in the store...");
       expenseStore.setExpenses(localExpenses);
 
-      // Add messages to the chat interface
-      if (!localExpenses.isEmpty) {
-        print("Adding expenses to chat history...");
-        addChatMessages(localExpenses);
-      } else {
-        print("No local expenses to add to chat");
-      }
-
       // Now that we've shown the local data, start fetching from the server
       try {
         print("Fetching subscription data from server...");
@@ -354,6 +380,14 @@ class _MyHomePageState extends State<MyHomePage> {
         // If server calls fail, at least we've shown the local data
         // Initialize subscription locally as fallback
         await _initializeSubscriptionLocally();
+
+        // Only add messages to chat if server fetch failed
+        if (!localExpenses.isEmpty) {
+          print("Adding local expenses to chat history...");
+          addChatMessages(localExpenses);
+        } else {
+          print("No local expenses to add to chat");
+        }
       }
 
       print("------- APP INITIALIZATION COMPLETE -------\n");
@@ -679,146 +713,176 @@ class _MyHomePageState extends State<MyHomePage> {
                           return Container(
                             margin: const EdgeInsets.symmetric(
                                 horizontal: 16.0, vertical: 16.0),
-                            decoration: BoxDecoration(
+                            decoration: NeumorphicBox.decoration(
+                              context: context,
                               color: isDark
                                   ? NeumorphicColors.darkCardBackground
                                   : NeumorphicColors.lightCardBackground,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
+                              borderRadius: 16.0,
+                              depth:
+                                  8.0, // Increased depth for more prominent shadow
+                              intensity: 0.9, // Higher intensity shadow
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Total spent this month
-                                  Text(
-                                    fromDate.year == todayDate.year
-                                        ? '${monthFormat.format(fromDate)} month'
-                                        : '${monthAndYearFormat.format(fromDate)} month',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDark
-                                          ? NeumorphicColors.darkTextSecondary
-                                          : NeumorphicColors.lightTextSecondary,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16.0),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    (isDark
+                                            ? NeumorphicColors
+                                                .darkCardBackground
+                                            : NeumorphicColors
+                                                .lightCardBackground)
+                                        .withOpacity(1.0),
+                                    (isDark
+                                        ? NeumorphicColors.darkCardBackground
+                                            .withOpacity(0.9)
+                                        : NeumorphicColors.lightCardBackground
+                                            .withOpacity(0.92)),
+                                  ],
+                                ),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.03),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Total spent this month
+                                    Text(
+                                      fromDate.year == todayDate.year
+                                          ? '${monthFormat.format(fromDate)} month'
+                                          : '${monthAndYearFormat.format(fromDate)} month',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? NeumorphicColors.darkTextSecondary
+                                            : NeumorphicColors
+                                                .lightTextSecondary,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    currencyFormat.format(total),
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? NeumorphicColors.darkTextPrimary
-                                          : NeumorphicColors.lightTextPrimary,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      currencyFormat.format(total),
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? NeumorphicColors.darkTextPrimary
+                                            : NeumorphicColors.lightTextPrimary,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                                  // Budget info
-                                  Text(
-                                    "Monthly Budget",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDark
-                                          ? NeumorphicColors.darkTextSecondary
-                                          : NeumorphicColors.lightTextSecondary,
+                                    // Budget info
+                                    Text(
+                                      "Monthly Budget",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? NeumorphicColors.darkTextSecondary
+                                            : NeumorphicColors
+                                                .lightTextSecondary,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
+                                    const SizedBox(height: 4),
 
-                                  // Progress bar row
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            color: isDark
-                                                ? Colors.white.withOpacity(0.1)
-                                                : Colors.black
-                                                    .withOpacity(0.05),
-                                          ),
-                                          child: FractionallySizedBox(
-                                            widthFactor: percentUsed,
-                                            alignment: Alignment.centerLeft,
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    isDark
-                                                        ? NeumorphicColors
-                                                            .darkAccent
-                                                        : NeumorphicColors
-                                                            .lightAccent,
-                                                    isDark
-                                                        ? NeumorphicColors
-                                                            .darkSecondaryAccent
-                                                        : NeumorphicColors
-                                                            .lightSecondaryAccent,
-                                                  ],
+                                    // Progress bar row
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            height: 8,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              color: isDark
+                                                  ? Colors.white
+                                                      .withOpacity(0.1)
+                                                  : Colors.black
+                                                      .withOpacity(0.05),
+                                            ),
+                                            child: FractionallySizedBox(
+                                              widthFactor: percentUsed,
+                                              alignment: Alignment.centerLeft,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      isDark
+                                                          ? NeumorphicColors
+                                                              .darkAccent
+                                                          : NeumorphicColors
+                                                              .lightAccent,
+                                                      isDark
+                                                          ? NeumorphicColors
+                                                              .darkSecondaryAccent
+                                                          : NeumorphicColors
+                                                              .lightSecondaryAccent,
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        percentDisplay,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? NeumorphicColors.darkTextPrimary
-                                              : NeumorphicColors
-                                                  .lightTextPrimary,
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          percentDisplay,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark
+                                                ? NeumorphicColors
+                                                    .darkTextPrimary
+                                                : NeumorphicColors
+                                                    .lightTextPrimary,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                      ],
+                                    ),
 
-                                  const SizedBox(height: 12),
+                                    const SizedBox(height: 12),
 
-                                  // Remaining amount
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        "Remaining",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: isDark
-                                              ? NeumorphicColors.darkTextPrimary
-                                              : NeumorphicColors
-                                                  .lightTextPrimary,
+                                    // Remaining amount
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "Remaining",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: isDark
+                                                ? NeumorphicColors
+                                                    .darkTextPrimary
+                                                : NeumorphicColors
+                                                    .lightTextPrimary,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        currencyFormat.format(remaining),
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDark
-                                              ? NeumorphicColors.darkAccent
-                                              : NeumorphicColors.lightAccent,
+                                        Text(
+                                          currencyFormat.format(remaining),
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark
+                                                ? NeumorphicColors.darkAccent
+                                                : NeumorphicColors.lightAccent,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );

@@ -51,7 +51,11 @@ Future<void> main() async {
           create: (context) => ChatStore(),
         ),
       ],
-      child: MyApp(themeService: themeService),
+      child: Builder(
+        builder: (context) {
+          return MyApp(themeService: themeService);
+        },
+      ),
     ),
   );
 }

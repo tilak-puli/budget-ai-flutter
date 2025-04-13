@@ -189,7 +189,7 @@ class NeumorphicComponents {
     );
   }
 
-  /// Creates a neumorphic text input field
+  /// Creates a neumorphic text input field that matches the form style
   static Widget textField({
     required BuildContext context,
     required TextEditingController controller,
@@ -198,9 +198,12 @@ class NeumorphicComponents {
     bool obscureText = false,
     Widget? prefixIcon,
     Widget? suffixIcon,
-    double borderRadius = 15.0,
+    Widget? suffixWidget,
+    double borderRadius = 8.0,
     void Function(String)? onChanged,
     void Function(String)? onSubmitted,
+    FocusNode? focusNode,
+    bool autofocus = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark
@@ -209,40 +212,55 @@ class NeumorphicComponents {
     final hintColor = isDark
         ? NeumorphicColors.darkTextSecondary
         : NeumorphicColors.lightTextSecondary;
+    final borderColor =
+        isDark ? Colors.grey.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
+    final fillColor =
+        isDark ? Colors.grey.withOpacity(0.08) : Colors.grey.withOpacity(0.05);
+    final accentColor =
+        isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
-    return Container(
-      decoration: NeumorphicBox.insetDecoration(
-        context: context,
-        borderRadius: borderRadius,
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      style: TextStyle(
+        color: textColor,
+        fontSize: 16.0,
       ),
-      constraints: const BoxConstraints(
-        minHeight: 52.0,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: TextField(
-          controller: controller,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 16.0,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: fillColor,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: hintColor.withOpacity(0.7),
+          fontSize: 16.0,
+        ),
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        suffix: suffixWidget,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16.0,
+          vertical: 14.0,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: borderColor, width: 1.0),
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: accentColor.withOpacity(0.8),
+            width: 1.5,
           ),
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(
-              color: hintColor,
-              fontSize: 16.0,
-            ),
-            border: InputBorder.none,
-            prefixIcon: prefixIcon,
-            suffixIcon: suffixIcon,
-            contentPadding: const EdgeInsets.symmetric(vertical: 4.0),
-          ),
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          onChanged: onChanged,
-          onSubmitted: onSubmitted,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
     );
   }
 

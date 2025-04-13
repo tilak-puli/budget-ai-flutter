@@ -1,6 +1,8 @@
 import 'package:budget_ai/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:budget_ai/theme/neumorphic_box.dart';
+import 'package:budget_ai/theme/index.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -35,17 +37,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Future<void> _loadSubscriptionData() async {
     try {
-      // Check current subscription status from server
-      final statusData = await _subscriptionService.getSubscriptionStatus();
-      final isPremium = statusData['hasSubscription'] ?? false;
-
-      // Get subscription details if premium
-      if (isPremium && statusData['subscription'] != null) {
-        final subscription = statusData['subscription'];
-        _expiryDate = subscription['expiryDate'];
-        _autoRenewing = subscription['autoRenewing'] ?? false;
-        _platform = subscription['platform'];
-      }
+      // Check current subscription status
+      final isPremium = await _subscriptionService.isPremium();
 
       // Get quota information from server
       final quotaData = await _subscriptionService.getMessageQuota();
@@ -183,8 +176,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Current Status
-                    Card(
-                      elevation: 4,
+                    Container(
+                      decoration: NeumorphicBox.cardDecoration(
+                        context: context,
+                        borderRadius: 16.0,
+                        depth: 5.0,
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -266,8 +263,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (_products.isEmpty)
-                        const Card(
-                          child: Padding(
+                        Container(
+                          decoration: NeumorphicBox.cardDecoration(
+                            context: context,
+                            borderRadius: 16.0,
+                            depth: 3.0,
+                          ),
+                          child: const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text(
                                 'No subscription options available at the moment.'),
@@ -280,21 +282,42 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           itemCount: _products.length,
                           itemBuilder: (context, index) {
                             final product = _products[index];
-                            return Card(
+                            return Container(
                               margin: const EdgeInsets.only(bottom: 12),
+                              decoration: NeumorphicBox.cardDecoration(
+                                context: context,
+                                borderRadius: 12.0,
+                                depth: 4.0,
+                              ),
                               child: ListTile(
                                 title: Text(product.title),
                                 subtitle: Text(product.description),
-                                trailing: ElevatedButton(
-                                  onPressed: () =>
-                                      _purchaseSubscription(product),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
+                                trailing: Container(
+                                  decoration: NeumorphicBox.buttonDecoration(
+                                    context: context,
+                                    color:
                                         Theme.of(context).colorScheme.primary,
-                                    foregroundColor:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    borderRadius: 8.0,
                                   ),
-                                  child: Text(product.price),
+                                  child: InkWell(
+                                    onTap: () => _purchaseSubscription(product),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
+                                        vertical: 8.0,
+                                      ),
+                                      child: Text(
+                                        product.price,
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             );

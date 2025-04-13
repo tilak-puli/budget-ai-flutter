@@ -32,6 +32,9 @@ class SubscriptionService {
   // Cached remaining message count
   int? _cachedRemainingCount;
 
+  // Cache duration for subscription status (5 minutes)
+  static const Duration _subscriptionCacheDuration = Duration(minutes: 5);
+
   SubscriptionService() {
     _listenToPurchaseUpdates();
   }
@@ -227,56 +230,64 @@ class SubscriptionService {
     _cachedRemainingCount = null;
   }
 
-  // Check premium status using server API
-  Future<bool> isPremium() async {
-    // Use cached value if available and recent
+  // Get the cached premium status without making an API call
+  bool? getCachedPremiumStatus() {
     if (_cachedPremiumStatus != null && _lastSubscriptionCheck != null) {
-      final difference = DateTime.now().difference(_lastSubscriptionCheck!);
-      if (difference.inMinutes < 5) {
-        // Cache for 5 minutes
-        return _cachedPremiumStatus!;
+      final cacheAge = DateTime.now().difference(_lastSubscriptionCheck!);
+      if (cacheAge < _subscriptionCacheDuration) {
+        print('Using cached premium status: $_cachedPremiumStatus');
+        return _cachedPremiumStatus;
       }
     }
-
-    try {
-      final statusData = await getSubscriptionStatus();
-      final isPremiumUser = statusData['hasSubscription'] ?? false;
-
-      // Cache the result
-      _cachedPremiumStatus = isPremiumUser;
-      _lastSubscriptionCheck = DateTime.now();
-
-      // Also update local storage for offline access
-      await _savePremiumStatus(isPremiumUser);
-
-      return isPremiumUser;
-    } catch (e) {
-      print('Error checking premium status from server: $e');
-
-      // Fall back to local storage if server check fails
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_hasPremiumKey) ?? false;
-    }
+    return null;
   }
 
-  // Get subscription status from server
-  Future<Map<String, dynamic>> getSubscriptionStatus() async {
+  // Check premium status using server API
+  Future<bool> isPremium() async {
+    // Check cache first
+    final cachedStatus = getCachedPremiumStatus();
+    if (cachedStatus != null) {
+      return cachedStatus;
+    }
+
+    // Check local storage next
+    final localStatus = await _getLocalPremiumStatus();
+    if (localStatus) {
+      print('Using local premium status (true)');
+      return true;
+    }
+
     try {
+      print('Fetching premium status from server...');
       final response = await http.get(
         Uri.parse('$_baseUrl$_subscriptionStatusEndpoint'),
         headers: await _getAuthHeaders(),
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+        final isPremium = data['isPremium'] ?? false;
+
+        // Update cache and local storage
+        _cachedPremiumStatus = isPremium;
+        _lastSubscriptionCheck = DateTime.now();
+        await _savePremiumStatus(isPremium);
+
+        print('Premium status from server: $isPremium');
+        return isPremium;
       } else {
-        print('Error getting subscription status: ${response.statusCode}');
-        throw Exception('Failed to get subscription status');
+        print('Failed to get subscription status: ${response.statusCode}');
+        return localStatus;
       }
     } catch (e) {
-      print('Error getting subscription status: $e');
-      throw e;
+      print('Error checking premium status: $e');
+      return localStatus;
     }
+  }
+
+  Future<bool> _getLocalPremiumStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasPremiumKey) ?? false;
   }
 
   // Get message quota from server

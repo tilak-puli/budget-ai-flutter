@@ -1,4 +1,5 @@
 import 'package:budget_ai/auth_gate.dart';
+import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,6 +38,9 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme(context),
             home: const AuthGate(),
             builder: (context, child) {
+              // Initialize GlobalContext for neumorphic styling in chat bubbles
+              GlobalContext.context = context;
+
               // Apply the EasyLoading builder
               child = EasyLoading.init()(context, child);
 

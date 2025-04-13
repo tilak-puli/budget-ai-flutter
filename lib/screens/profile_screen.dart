@@ -20,17 +20,23 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSubscriptionData();
+    // Get the cached status immediately
+    _isPremium = _subscriptionService.getCachedPremiumStatus() ?? false;
+    _isLoading = false;
+    // Then update in background if needed
+    _updateSubscriptionIfNeeded();
   }
 
-  Future<void> _loadSubscriptionData() async {
-    final isPremium = await _subscriptionService.isPremium();
-
-    if (mounted) {
-      setState(() {
-        _isPremium = isPremium;
-        _isLoading = false;
-      });
+  Future<void> _updateSubscriptionIfNeeded() async {
+    try {
+      final isPremium = await _subscriptionService.isPremium();
+      if (mounted && isPremium != _isPremium) {
+        setState(() {
+          _isPremium = isPremium;
+        });
+      }
+    } catch (e) {
+      print('Error updating subscription status: $e');
     }
   }
 
@@ -45,7 +51,53 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-    ).then((_) => _loadSubscriptionData());
+    ).then((_) => _updateSubscriptionIfNeeded());
+  }
+
+  /// Creates a standardized setting option item
+  Widget _buildSettingOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Widget? trailing,
+    Color? iconColor,
+    Color? textColor,
+    Color? backgroundColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultIconColor =
+        isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
+
+    return NeumorphicComponents.card(
+      context: context,
+      color: backgroundColor,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 24.0,
+              color: iconColor ?? defaultIconColor,
+            ),
+            const SizedBox(width: 16.0),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -121,16 +173,25 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
 
                     // User name
                     Text(
-                      user?.displayName ?? 'User',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      user?.displayName ?? 'Tilak Puli',
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: isDark
+                                    ? NeumorphicColors.darkTextPrimary
+                                    : NeumorphicColors.lightTextPrimary,
+                              ),
                     ),
 
                     const SizedBox(height: 8),
 
                     // User email
                     Text(
-                      user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      user?.email ?? 'tilakpuli15@gmail.com',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: isDark
+                                ? NeumorphicColors.darkTextSecondary
+                                : NeumorphicColors.lightTextSecondary,
+                          ),
                     ),
 
                     const SizedBox(height: 8),
@@ -140,7 +201,11 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: _isPremium ? Colors.amber : Colors.grey.shade200,
+                        color: _isPremium
+                            ? Colors.amber
+                            : isDark
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -153,7 +218,9 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                             size: 16,
                             color: _isPremium
                                 ? Colors.white
-                                : Colors.grey.shade700,
+                                : isDark
+                                    ? Colors.grey.shade300
+                                    : Colors.grey.shade700,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -161,7 +228,9 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                             style: TextStyle(
                               color: _isPremium
                                   ? Colors.white
-                                  : Colors.grey.shade700,
+                                  : isDark
+                                      ? Colors.grey.shade300
+                                      : Colors.grey.shade700,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -198,93 +267,50 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Theme toggle setting
-                    NeumorphicComponents.card(
+                    // Dark mode toggle
+                    _buildSettingOption(
                       context: context,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12.0, horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isDark ? Icons.dark_mode : Icons.light_mode,
-                              color: isDark
-                                  ? NeumorphicColors.darkAccent
-                                  : NeumorphicColors.lightAccent,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                'Dark Mode',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                            ThemeToggleSwitch(
-                              isDarkMode: themeService.isDarkMode,
-                              onToggle: () => themeService.toggleTheme(),
-                            ),
-                          ],
-                        ),
+                      icon: isDark ? Icons.light_mode : Icons.dark_mode,
+                      title: 'Dark Mode',
+                      onTap: () {},
+                      trailing: ThemeToggleSwitch(
+                        isDarkMode: isDark,
+                        onToggle: () => themeService.toggleTheme(),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
 
-                    // Subscription button
+                    // Upgrade to Premium option for free users
                     if (!_isPremium)
-                      NeumorphicComponents.button(
+                      _buildSettingOption(
                         context: context,
-                        onPressed: _navigateToSubscription,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.diamond_outlined),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Upgrade to Premium',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                        icon: Icons.diamond_outlined,
+                        title: 'Upgrade to Premium',
+                        onTap: _navigateToSubscription,
+                        iconColor: Colors.amber,
                       ),
 
-                    const SizedBox(height: 16),
-
-                    // Manage subscription button for premium users
+                    // Manage subscription option for premium users
                     if (_isPremium)
-                      OutlinedButton.icon(
-                        onPressed: _navigateToSubscription,
-                        icon: const Icon(Icons.settings),
-                        label: const Text('Manage Subscription'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                        ),
+                      _buildSettingOption(
+                        context: context,
+                        icon: Icons.settings_applications,
+                        title: 'Manage Subscription',
+                        onTap: _navigateToSubscription,
                       ),
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 12),
 
-                    // Sign out button
-                    NeumorphicComponents.button(
+                    // Sign out option
+                    _buildSettingOption(
                       context: context,
-                      color: Colors.red.withOpacity(0.1),
-                      onPressed: _signOut,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.logout, color: Colors.red),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Sign Out',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      icon: Icons.logout,
+                      title: 'Sign Out',
+                      onTap: _signOut,
+                      iconColor: Colors.red,
+                      textColor: Colors.red,
+                      backgroundColor: Colors.red.withOpacity(0.05),
                     ),
                   ],
                 ),

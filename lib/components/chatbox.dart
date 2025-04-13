@@ -41,29 +41,52 @@ class Chatbox extends StatelessWidget {
             Expanded(
               child: Container(
                 color: backgroundColor,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: ListView.builder(
-                    reverse: true,
-                    itemCount: chatStore.history.messages.length,
-                    itemBuilder: (context, index) {
-                      final message = chatStore.history.messages[index];
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          left: message.isUserMessage ? 100.0 : 5.0,
-                          right: message.isUserMessage ? 5.0 : 100.0,
-                          top: 4.0,
-                          bottom: 4.0,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: ListView.builder(
+                          reverse: true,
+                          itemCount: chatStore.history.messages.length,
+                          itemBuilder: (context, index) {
+                            final message = chatStore.history.messages[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                left: message.isUserMessage ? 100.0 : 5.0,
+                                right: message.isUserMessage ? 5.0 : 100.0,
+                                top: 4.0,
+                                bottom: 4.0,
+                              ),
+                              child: Align(
+                                alignment: message.isUserMessage
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: message.render(),
+                              ),
+                            );
+                          },
                         ),
-                        child: Align(
-                          alignment: message.isUserMessage
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: message.render(),
+                      ),
+                    ),
+
+                    // Message counter
+                    if (quotaData != null &&
+                        !(quotaData?['isPremium'] ?? false))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Text(
+                          "${quotaData?['remainingMessages'] ?? 0} of ${quotaData?['dailyLimit'] ?? 5} free messages left",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                  ],
                 ),
               ),
             ),
