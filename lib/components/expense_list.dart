@@ -30,19 +30,17 @@ class ExpensesListBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> transactions = [];
-
-    expenseStore.expenses.groupByTime.forEach((k, v) {
-      transactions.add(const SizedBox(height: 10));
-      transactions.add(Center(child: Text(k)));
-      v.forEach((expense) => transactions.add(ExpenseCard(expense)));
-    });
-
     return expenseStore.expenses.isEmpty
         ? const Center(
             child: Text("No transactions recorded this month"),
           )
-        : ListView(children: transactions);
+        : ListView.builder(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+            itemCount: expenseStore.expenses.list.length,
+            itemBuilder: (context, index) {
+              return ExpenseCard(expenseStore.expenses.list[index]);
+            },
+          );
   }
 }
 

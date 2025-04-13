@@ -1,19 +1,51 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SubscriptionService {
   static const String _messageCountKey = 'daily_message_count';
   static const String _lastResetDateKey = 'last_reset_date';
   static const String _hasPremiumKey = 'has_premium';
   static const int _freeMessageLimit = 5;
+  static const int _premiumMessageLimit = 100;
+
+  // API endpoints
+  static const String _baseUrl = 'https://backend-2xqnus4dqq-uc.a.run.app';
+  static const String _subscriptionStatusEndpoint = '/subscriptions/status';
+  static const String _messageQuotaEndpoint = '/subscriptions/message-quota';
+  static const String _verifyPurchaseEndpoint =
+      '/subscriptions/verify-purchase';
 
   final _inAppPurchase = InAppPurchase.instance;
   List<ProductDetails> _products = [];
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
+  // Cache for quota and subscription status
+  DateTime? _lastQuotaCheck;
+  Map<String, dynamic>? _cachedQuotaData;
+  DateTime? _lastSubscriptionCheck;
+  bool? _cachedPremiumStatus;
+
+  // Cached remaining message count
+  int? _cachedRemainingCount;
+
   SubscriptionService() {
     _listenToPurchaseUpdates();
+  }
+
+  // Helper to get auth headers
+  Future<Map<String, String>> _getAuthHeaders() async {
+    String? token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null) {
+      throw Exception('Not authenticated');
+    }
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
   }
 
   void _listenToPurchaseUpdates() {
@@ -40,8 +72,28 @@ class SubscriptionService {
         print('Purchase error: ${purchaseDetails.error?.message}');
       } else if (purchaseDetails.status == PurchaseStatus.purchased ||
           purchaseDetails.status == PurchaseStatus.restored) {
-        // Grant user entitlement to the purchased product
-        await _savePremiumStatus(true);
+        // Verify the purchase with the server
+        try {
+          await verifyPurchase(
+              packageName:
+                  'com.company.budgetai', // Replace with actual package name
+              subscriptionId: purchaseDetails.productID,
+              purchaseToken:
+                  purchaseDetails.verificationData.serverVerificationData,
+              platform: 'android' // or 'ios' depending on platform
+              );
+
+          // Store locally as well as a fallback
+          await _savePremiumStatus(true);
+
+          // Clear the cached data to force a refresh
+          _cachedPremiumStatus = null;
+          _cachedQuotaData = null;
+          _lastQuotaCheck = null;
+          _lastSubscriptionCheck = null;
+        } catch (e) {
+          print('Error verifying purchase with server: $e');
+        }
       }
 
       // Complete the purchase
@@ -51,13 +103,63 @@ class SubscriptionService {
     }
   }
 
+  // Verify purchase with server
+  Future<bool> verifyPurchase({
+    required String packageName,
+    required String subscriptionId,
+    required String purchaseToken,
+    required String platform,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl$_verifyPurchaseEndpoint'),
+        headers: await _getAuthHeaders(),
+        body: json.encode({
+          'packageName': packageName,
+          'subscriptionId': subscriptionId,
+          'purchaseToken': purchaseToken,
+          'platform': platform,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Purchase verification successful: ${data['message']}');
+        return data['success'] ?? false;
+      } else {
+        print('Purchase verification failed: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Error verifying purchase: $e');
+      return false;
+    }
+  }
+
   Future<void> _savePremiumStatus(bool isPremium) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hasPremiumKey, isPremium);
+    _cachedPremiumStatus = isPremium;
   }
 
+  // Check if user can send a message using server API
   Future<bool> canSendMessage() async {
-    if (await isPremium()) return true;
+    try {
+      // Get quota from server
+      final quotaData = await getMessageQuota();
+      return quotaData['quota']['hasQuotaLeft'] ?? false;
+    } catch (e) {
+      print('Error checking message quota from server: $e');
+
+      // Fall back to local check if server check fails
+      return _canSendMessageLocal();
+    }
+  }
+
+  // Local fallback for checking message quota
+  Future<bool> _canSendMessageLocal() async {
+    final isPremiumUser = await isPremium();
+    if (isPremiumUser) return true;
 
     final prefs = await SharedPreferences.getInstance();
     final lastResetDateString = prefs.getString(_lastResetDateKey);
@@ -68,7 +170,7 @@ class SubscriptionService {
     // Reset counter if it's a new day
     if (!isSameDay(lastResetDate, DateTime.now())) {
       print(
-          'Resetting daily count - last reset: $lastResetDate, now: ${DateTime.now()}');
+          'Resetting daily count locally - last reset: $lastResetDate, now: ${DateTime.now()}');
       await resetDailyCount();
       return true;
     }
@@ -76,43 +178,157 @@ class SubscriptionService {
     final messageCount = prefs.getInt(_messageCountKey) ?? 0;
     final canSend = messageCount < _freeMessageLimit;
     print(
-        'Can send message: $canSend (count: $messageCount, limit: $_freeMessageLimit)');
+        'Local check - Can send message: $canSend (count: $messageCount, limit: $_freeMessageLimit)');
     return canSend;
   }
 
+  // Increment message count - calls API to get updated count
   Future<void> incrementMessageCount() async {
+    try {
+      // The message quota will be updated server-side when a message is sent
+      // We'll clear the cache to ensure we get the latest count on next check
+      _cachedQuotaData = null;
+      _lastQuotaCheck = null;
+      _cachedRemainingCount = null;
+
+      // But we'll also update local count as fallback
+      await _incrementMessageCountLocal();
+    } catch (e) {
+      print('Error updating message count: $e');
+      // Fall back to local update
+      await _incrementMessageCountLocal();
+    }
+  }
+
+  // Local fallback for incrementing message count
+  Future<void> _incrementMessageCountLocal() async {
     if (await isPremium()) return;
 
     final prefs = await SharedPreferences.getInstance();
-    // Get the current count or default to 0
     final currentCount = prefs.getInt(_messageCountKey) ?? 0;
-    // Increment the count
     await prefs.setInt(_messageCountKey, currentCount + 1);
-    // Print for debugging
-    print('Message count incremented to: ${currentCount + 1}');
+    print('Local message count incremented to: ${currentCount + 1}');
   }
 
   Future<void> resetDailyCount() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Get current count before reset
     final oldCount = prefs.getInt(_messageCountKey) ?? 0;
-
-    // Reset the message count to 0
     await prefs.setInt(_messageCountKey, 0);
 
-    // Store the current date as the last reset date
     final now = DateTime.now();
-    final oldResetDate = prefs.getString(_lastResetDateKey) ?? 'never';
     await prefs.setString(_lastResetDateKey, now.toIso8601String());
 
     print(
-        'Daily count reset from $oldCount to 0. Old reset date: $oldResetDate, new: ${now.toIso8601String()}');
+        'Daily count reset locally from $oldCount to 0 at ${now.toIso8601String()}');
+
+    // Clear cache
+    _cachedQuotaData = null;
+    _lastQuotaCheck = null;
+    _cachedRemainingCount = null;
   }
 
+  // Check premium status using server API
   Future<bool> isPremium() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_hasPremiumKey) ?? false;
+    // Use cached value if available and recent
+    if (_cachedPremiumStatus != null && _lastSubscriptionCheck != null) {
+      final difference = DateTime.now().difference(_lastSubscriptionCheck!);
+      if (difference.inMinutes < 5) {
+        // Cache for 5 minutes
+        return _cachedPremiumStatus!;
+      }
+    }
+
+    try {
+      final statusData = await getSubscriptionStatus();
+      final isPremiumUser = statusData['hasSubscription'] ?? false;
+
+      // Cache the result
+      _cachedPremiumStatus = isPremiumUser;
+      _lastSubscriptionCheck = DateTime.now();
+
+      // Also update local storage for offline access
+      await _savePremiumStatus(isPremiumUser);
+
+      return isPremiumUser;
+    } catch (e) {
+      print('Error checking premium status from server: $e');
+
+      // Fall back to local storage if server check fails
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_hasPremiumKey) ?? false;
+    }
+  }
+
+  // Get subscription status from server
+  Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl$_subscriptionStatusEndpoint'),
+        headers: await _getAuthHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        print('Error getting subscription status: ${response.statusCode}');
+        throw Exception('Failed to get subscription status');
+      }
+    } catch (e) {
+      print('Error getting subscription status: $e');
+      throw e;
+    }
+  }
+
+  // Get message quota from server
+  Future<Map<String, dynamic>> getMessageQuota() async {
+    // Use cached value if available and recent
+    if (_cachedQuotaData != null && _lastQuotaCheck != null) {
+      final difference = DateTime.now().difference(_lastQuotaCheck!);
+      if (difference.inMinutes < 2) {
+        // Cache for 2 minutes
+        return _cachedQuotaData!;
+      }
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl$_messageQuotaEndpoint'),
+        headers: await _getAuthHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Cache the result
+        _cachedQuotaData = data;
+        _lastQuotaCheck = DateTime.now();
+
+        // Update local count for offline access
+        final quota = data['quota'];
+        if (quota != null) {
+          final remaining = quota['remainingQuota'] as int? ?? 0;
+          final isPremium = quota['isPremium'] as bool? ?? false;
+          final limit = quota['dailyLimit'] as int? ??
+              (isPremium ? _premiumMessageLimit : _freeMessageLimit);
+
+          // Store the updated count locally
+          final prefs = await SharedPreferences.getInstance();
+          final usedCount = limit - remaining;
+          await prefs.setInt(_messageCountKey, usedCount < 0 ? 0 : usedCount);
+
+          // Cache the remaining count
+          _cachedRemainingCount = remaining;
+        }
+
+        return data;
+      } else {
+        print('Error getting message quota: ${response.statusCode}');
+        throw Exception('Failed to get message quota');
+      }
+    } catch (e) {
+      print('Error getting message quota: $e');
+      throw e;
+    }
   }
 
   Future<void> restorePurchases() async {
@@ -129,7 +345,7 @@ class SubscriptionService {
     final available = await _inAppPurchase.isAvailable();
     if (!available) return;
 
-    // Define product IDs (replace with your actual product IDs)
+    // Define product IDs
     const Set<String> _kIds = {
       'budget_ai_premium_monthly',
       'budget_ai_premium_yearly'
@@ -146,10 +362,54 @@ class SubscriptionService {
 
   // Get remaining message count for the current day
   Future<int?> getRemainingMessageCount() async {
-    final prefs = await SharedPreferences.getInstance();
-    final count = prefs.getInt(_messageCountKey);
-    print('Current message count: $count');
-    return count;
+    try {
+      // If we have a cached value, use it
+      if (_cachedRemainingCount != null && _lastQuotaCheck != null) {
+        final difference = DateTime.now().difference(_lastQuotaCheck!);
+        if (difference.inMinutes < 2) {
+          // Cache for 2 minutes
+          return _cachedRemainingCount;
+        }
+      }
+
+      // Otherwise get from server
+      final quotaData = await getMessageQuota();
+      final quota = quotaData['quota'];
+      if (quota != null) {
+        return quota['remainingQuota'] as int?;
+      }
+      return null;
+    } catch (e) {
+      print('Error getting remaining message count from server: $e');
+
+      // Fall back to local storage
+      final prefs = await SharedPreferences.getInstance();
+      final count = prefs.getInt(_messageCountKey) ?? 0;
+      final isPremiumUser = await isPremium();
+      final limit = isPremiumUser ? _premiumMessageLimit : _freeMessageLimit;
+      return limit - count;
+    }
+  }
+
+  // Get daily message limit based on subscription status
+  Future<int> getDailyMessageLimit() async {
+    try {
+      final quotaData = await getMessageQuota();
+      final quota = quotaData['quota'];
+      if (quota != null) {
+        return quota['dailyLimit'] as int? ?? _freeMessageLimit;
+      }
+
+      // Fall back to checking premium status
+      final isPremiumUser = await isPremium();
+      return isPremiumUser ? _premiumMessageLimit : _freeMessageLimit;
+    } catch (e) {
+      print('Error getting daily message limit: $e');
+
+      // Fall back to checking local premium status
+      final isPremiumUser = await isPremium();
+      return isPremiumUser ? _premiumMessageLimit : _freeMessageLimit;
+    }
   }
 
   // Get available subscription products
@@ -171,13 +431,84 @@ class SubscriptionService {
     final oldCount = prefs.getInt(_messageCountKey) ?? 0;
     await prefs.setInt(_messageCountKey, 0);
     print('Message count manually reset from $oldCount to 0 for testing.');
+
+    // Clear cache
+    _cachedQuotaData = null;
+    _lastQuotaCheck = null;
+    _cachedRemainingCount = null;
   }
 
   // Check current message count
   Future<int> getCurrentMessageCount() async {
+    try {
+      final quotaData = await getMessageQuota();
+      final quota = quotaData['quota'];
+      if (quota != null) {
+        final remaining = quota['remainingQuota'] as int? ?? 0;
+        final limit = quota['dailyLimit'] as int? ?? _freeMessageLimit;
+        return limit - remaining;
+      }
+
+      // Fall back to local storage
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_messageCountKey) ?? 0;
+    } catch (e) {
+      print('Error getting current message count: $e');
+
+      // Fall back to local storage
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_messageCountKey) ?? 0;
+    }
+  }
+
+  // Update quota information from API response
+  Future<void> updateQuotaFromResponse({
+    required int remainingQuota,
+    required int dailyLimit,
+    required bool isPremium,
+  }) async {
+    print(
+        "Updating quota from API response: remaining=$remainingQuota, limit=$dailyLimit, isPremium=$isPremium");
+
+    // Update cached values
+    Map<String, dynamic> quota = {
+      'hasQuotaLeft': remainingQuota > 0,
+      'remainingQuota': remainingQuota,
+      'dailyLimit': dailyLimit,
+      'isPremium': isPremium,
+    };
+
+    // Create a full quota response structure like the API would return
+    Map<String, dynamic> fullQuotaData = {'success': true, 'quota': quota};
+
+    // Cache the data
+    _cachedQuotaData = fullQuotaData;
+    _lastQuotaCheck = DateTime.now();
+    _cachedRemainingCount = remainingQuota;
+    _cachedPremiumStatus = isPremium;
+    _lastSubscriptionCheck = DateTime.now();
+
+    // Also update local storage for offline access
     final prefs = await SharedPreferences.getInstance();
-    final count = prefs.getInt(_messageCountKey) ?? 0;
-    print('Current raw message count: $count');
-    return count;
+    final usedCount = dailyLimit - remainingQuota;
+    await prefs.setInt(_messageCountKey, usedCount < 0 ? 0 : usedCount);
+    await prefs.setBool(_hasPremiumKey, isPremium);
+  }
+
+  // Get cached quota data without making an API call
+  Future<Map<String, dynamic>?> getCachedQuotaData() async {
+    // Check if we have cached data that's recent enough (within last 30 minutes)
+    if (_cachedQuotaData != null && _lastQuotaCheck != null) {
+      final difference = DateTime.now().difference(_lastQuotaCheck!);
+      if (difference.inMinutes < 30) {
+        // Extended cache time
+        print(
+            "Using cached quota data from ${difference.inMinutes} minutes ago");
+        return _cachedQuotaData;
+      }
+    }
+
+    // If no valid cached data, return null
+    return null;
   }
 }

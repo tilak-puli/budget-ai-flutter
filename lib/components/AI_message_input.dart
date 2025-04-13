@@ -3,16 +3,23 @@ import 'package:budget_ai/components/expense_card.dart';
 import 'package:budget_ai/components/create_expense_form.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/services/subscription_service.dart';
+import 'package:budget_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 
 class AIMessageInput extends StatefulWidget {
   final Function(dynamic) onAddMessage;
   final bool isDisabled;
+  final int? remainingMessages;
+  final int? dailyLimit;
+  final bool? isPremium;
 
   const AIMessageInput({
     super.key,
     required this.onAddMessage,
     this.isDisabled = false,
+    this.remainingMessages,
+    this.dailyLimit,
+    this.isPremium,
   });
 
   @override
@@ -23,58 +30,123 @@ class _AIMessageInputState extends State<AIMessageInput> {
   final TextEditingController _controller = TextEditingController();
   final SubscriptionService _subscriptionService = SubscriptionService();
   int _remainingMessages = 0;
+  int _dailyLimit = 5;
   bool _isPremium = false;
   bool _isLoading = true;
-  Timer? _refreshTimer;
 
   // Store the free message limit
   static const int _freeMessageLimit = 5;
+  static const int _premiumMessageLimit = 100;
 
   @override
   void initState() {
     super.initState();
-    _loadSubscriptionData();
 
-    // Set up a timer to refresh the count every 30 seconds
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) {
-        _loadSubscriptionData();
-      }
-    });
+    // Initialize with values from parent if available
+    if (widget.remainingMessages != null &&
+        widget.dailyLimit != null &&
+        widget.isPremium != null) {
+      setState(() {
+        _remainingMessages = widget.remainingMessages!;
+        _dailyLimit = widget.dailyLimit!;
+        _isPremium = widget.isPremium!;
+        _isLoading = false;
+      });
+      print(
+          "Using quota data from parent: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium");
+    } else {
+      // Only call API if parent didn't provide values
+      _loadSubscriptionData();
+    }
   }
 
   @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
+  void didUpdateWidget(AIMessageInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-  Future<void> _loadSubscriptionData() async {
-    final isPremium = await _subscriptionService.isPremium();
-    final messageCount =
-        await _subscriptionService.getRemainingMessageCount() ?? 0;
-
-    if (mounted) {
+    // Update state if parent passes new values
+    if (widget.remainingMessages != null &&
+        widget.dailyLimit != null &&
+        widget.isPremium != null) {
       setState(() {
-        _isPremium = isPremium;
-        _remainingMessages = _freeMessageLimit - messageCount;
-        if (_remainingMessages < 0) _remainingMessages = 0;
+        _remainingMessages = widget.remainingMessages!;
+        _dailyLimit = widget.dailyLimit!;
+        _isPremium = widget.isPremium!;
         _isLoading = false;
       });
     }
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSubscriptionData() async {
+    try {
+      // Try to get quota data from server API
+      final isPremium = await _subscriptionService.isPremium();
+      final remainingMessages =
+          await _subscriptionService.getRemainingMessageCount() ?? 0;
+      final dailyLimit = await _subscriptionService.getDailyMessageLimit();
+
+      if (mounted) {
+        setState(() {
+          _isPremium = isPremium;
+          _remainingMessages = remainingMessages;
+          _dailyLimit = dailyLimit;
+          _isLoading = false;
+        });
+      }
+
+      print(
+          "Quota status: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium");
+    } catch (e) {
+      print("Error loading subscription data: $e");
+
+      // Fall back to basic local data if server call fails
+      final isPremium = await _subscriptionService.isPremium();
+      final messageCount =
+          await _subscriptionService.getCurrentMessageCount() ?? 0;
+      final limit = isPremium ? _premiumMessageLimit : _freeMessageLimit;
+
+      if (mounted) {
+        setState(() {
+          _isPremium = isPremium;
+          _remainingMessages = limit - messageCount;
+          if (_remainingMessages < 0) _remainingMessages = 0;
+          _dailyLimit = limit;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   // Method to call when a message is sent successfully
   Future<void> _onMessageSent() async {
-    if (!_isPremium) {
-      // Wait a moment for the backend to process the message
-      await Future.delayed(const Duration(milliseconds: 1000));
+    // Use cached quota data from the subscription service
+    try {
+      // Get cached quota data (which was updated by the API response)
+      final cachedData = await _subscriptionService.getCachedQuotaData();
 
-      // Reload the actual data - don't change the UI optimistically
-      await _loadSubscriptionData();
+      if (cachedData != null && mounted) {
+        final quota = cachedData['quota'];
+        final remainingQuota = quota['remainingQuota'] as int? ?? 0;
+        final dailyLimit = quota['dailyLimit'] as int? ?? _freeMessageLimit;
+        final isPremium = quota['isPremium'] as bool? ?? false;
 
-      print("Message input refreshed count after send");
+        setState(() {
+          _isPremium = isPremium;
+          _remainingMessages = remainingQuota;
+          _dailyLimit = dailyLimit;
+        });
+
+        print(
+            "Updated message input from cache: remaining=$remainingQuota, limit=$dailyLimit");
+      }
+    } catch (e) {
+      print("Error updating from cached quota: $e");
     }
   }
 
@@ -104,123 +176,86 @@ class _AIMessageInputState extends State<AIMessageInput> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark
+        ? NeumorphicColors.darkTextPrimary
+        : NeumorphicColors.lightTextPrimary;
+    final backgroundColor = isDark
+        ? NeumorphicColors.darkPrimaryBackground
+        : NeumorphicColors.lightPrimaryBackground;
+    final accentColor =
+        isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
+
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (!_isPremium && !_isLoading)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: Text(
-              _remainingMessages > 0
-                  ? '$_remainingMessages free messages remaining today'
-                  : 'You\'ve reached your daily limit',
-              style: TextStyle(
-                fontSize: 12,
-                color: _remainingMessages > 0
-                    ? Colors.green.shade700
-                    : Colors.red.shade700,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        SizedBox(
-          height: 50,
-          width: MediaQuery.of(context).size.width - 20,
+        // Message input area with neumorphic styling
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             children: [
+              // Text input field
               Expanded(
-                child: TextField(
-                  autofocus: false,
+                child: NeumorphicComponents.textField(
+                  context: context,
                   controller: _controller,
+                  hintText: "What's the expense?",
                   onSubmitted: (widget.isDisabled ||
                           _remainingMessages <= 0 && !_isPremium)
                       ? null
                       : (value) {
                           _onSendPressed();
                         },
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'What\'s the expense?',
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
                 ),
               ),
-              // Manual create expense button
-              Padding(
-                padding: const EdgeInsets.only(left: 2.0),
-                child: Container(
-                  height: 50,
-                  width: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  child: IconButton(
-                    color: Colors.white,
-                    tooltip: 'Manually create expense',
-                    onPressed: _showCreateExpenseForm,
-                    icon: const Icon(Icons.add),
-                  ),
+
+              const SizedBox(width: 12),
+
+              // Add expense button (floating action button)
+              NeumorphicComponents.circularButton(
+                context: context,
+                size: 48,
+                depth: 6.0,
+                color: Theme.of(context)
+                    .colorScheme
+                    .secondary
+                    .withOpacity(isDark ? 0.8 : 0.2),
+                icon: Icon(
+                  Icons.add,
+                  color: Theme.of(context).colorScheme.secondary,
+                  size: 24,
                 ),
+                onPressed: _showCreateExpenseForm,
               ),
-              // AI message send button
-              Padding(
-                padding: const EdgeInsets.only(left: 2.0),
-                child: Container(
-                  height: 50,
-                  width: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: (_remainingMessages <= 0 && !_isPremium)
-                        ? Colors.grey
-                        : Theme.of(context).colorScheme.primary,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      IconButton(
-                        color: Colors.white,
-                        tooltip: 'Send AI message',
-                        onPressed: (widget.isDisabled ||
-                                _remainingMessages <= 0 && !_isPremium)
-                            ? null
-                            : () {
-                                _onSendPressed();
-                              },
-                        icon: const Icon(Icons.send),
-                      ),
-                      if (!_isPremium && !_isLoading)
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: _remainingMessages > 0
-                                  ? Colors.green
-                                  : Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              '$_remainingMessages',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+
+              const SizedBox(width: 12),
+
+              // Send message button
+              NeumorphicComponents.circularButtonWithBadge(
+                context: context,
+                size: 48,
+                depth: 6.0,
+                color: (_remainingMessages <= 0 && !_isPremium)
+                    ? Colors.grey.withOpacity(0.3)
+                    : accentColor.withOpacity(isDark ? 0.3 : 0.1),
+                icon: Icon(
+                  Icons.send,
+                  color: (_remainingMessages <= 0 && !_isPremium)
+                      ? Colors.grey
+                      : accentColor,
+                  size: 20,
                 ),
-              )
+                showBadge: !_isPremium && !_isLoading,
+                badgeText: '$_remainingMessages/$_dailyLimit',
+                badgeColor: _remainingMessages > 0 ? Colors.green : Colors.red,
+                onPressed: (_controller.text.trim().isEmpty ||
+                        widget.isDisabled ||
+                        (_remainingMessages <= 0 && !_isPremium))
+                    ? () {} // Provide an empty function instead of null
+                    : () {
+                        _onSendPressed();
+                      },
+              ),
             ],
           ),
         ),

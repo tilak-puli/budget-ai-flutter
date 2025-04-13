@@ -1,8 +1,20 @@
-
-var budgetList =  ["Food", "Transport", "Rent", "Entertainment", "Utilities", "Groceries", "Shopping", "Healthcare", "Personal Care", "Misc", "Savings", "Insurance"];
+var budgetList = [
+  "Food",
+  "Transport",
+  "Rent",
+  "Entertainment",
+  "Utilities",
+  "Groceries",
+  "Shopping",
+  "Healthcare",
+  "Personal Care",
+  "Misc",
+  "Savings",
+  "Insurance"
+];
 
 class Budget {
-  Map<String, int> map = Map.of({
+  Map<String, num> map = Map.of({
     "food": 3000,
     "transport": 1000,
     "rent": 7000,
@@ -15,12 +27,12 @@ class Budget {
     "misc": 1000,
     "savings": 5000
   });
-  
+
   get total => map.values.reduce((value, element) => value + element);
 
-  updateAmount(String category, int amount) {
+  updateAmount(String category, num amount) {
     map[category.toLowerCase()] = amount;
   }
 
-  int getAmount(String category) => map[category.toLowerCase()] ?? 100;
+  num getAmount(String category) => map[category.toLowerCase()] ?? 100;
 }

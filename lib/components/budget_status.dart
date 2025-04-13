@@ -1,6 +1,7 @@
 import 'package:budget_ai/models/budget.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/state/expense_store.dart';
+import 'package:budget_ai/theme/index.dart';
 import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,14 +16,10 @@ class BudgetStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
-          return BudgetStatusCard(
-              expenseStore.expenses, expenseStore.budget, title);
-        })
-      ],
-    );
+    return Consumer<ExpenseStore>(builder: (context, expenseStore, child) {
+      return BudgetStatusCard(
+          expenseStore.expenses, expenseStore.budget, title);
+    });
   }
 }
 
@@ -42,61 +39,169 @@ class BudgetStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     var total = expenses.total;
 
-    return Card(
-      elevation: 4,
-      surfaceTintColor: Theme.of(context).colorScheme.background,
-      shadowColor: Colors.black,
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(children: [
+    // Calculate budget percentage if budget has a valid total
+    double percentUsed = 0.0;
+    if (budget.total > 0) {
+      percentUsed = (total / budget.total).clamp(0.0, 1.0);
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark
+        ? NeumorphicColors.darkTextPrimary
+        : NeumorphicColors.lightTextPrimary;
+    final secondaryTextColor = isDark
+        ? NeumorphicColors.darkTextSecondary
+        : NeumorphicColors.lightTextSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title row with edit button
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                    fontWeight: FontWeight.normal, fontSize: 15),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: secondaryTextColor,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Consumer<ExpenseStore>(
+                      builder: (context, expenseStore, child) {
+                        return BudgetEditDailog(expenseStore);
+                      },
+                    ),
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.black.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: secondaryTextColor,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
+
+          const SizedBox(height: 12),
+
+          // Amount display
+          Text(
+            currencyFormat.format(total),
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Modernized progress bar
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                currencyFormat.format(total),
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Monthly Budget",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: secondaryTextColor,
+                    ),
+                  ),
+                  Text(
+                    "${(percentUsed * 100).toStringAsFixed(0)}%",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                ],
               ),
-              // Text(
-              //   "${(total / budget.total * 100).toStringAsFixed(0)}%",
-              //   style: TextStyle(color: Theme.of(context).hintColor),
-              // ),
+              const SizedBox(height: 8),
+              Container(
+                height: 8,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: percentUsed,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          isDark
+                              ? NeumorphicColors.darkAccent
+                              : NeumorphicColors.lightAccent,
+                          isDark
+                              ? NeumorphicColors.darkSecondaryAccent
+                              : NeumorphicColors.lightSecondaryAccent,
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 5),
-          // LinearProgressIndicator(
-          //     backgroundColor: Theme.of(context).colorScheme.background,
-          //     minHeight: 10,
-          //     borderRadius: const BorderRadius.all(Radius.circular(10)),
-          //     value: total / budget.total),
-          // const SizedBox(height: 5),
-          // Row(
-          //   children: [
-          //     Text("${currencyFormat.format(budget.total - total)} left of ${currencyFormat.format(budget.total)}"),
-          //     IconButton(
-          //         onPressed: () => showDialog<String>(
-          //             context: context,
-          //             builder: (BuildContext context) => Dialog(
-          //                   child: Consumer<ExpenseStore>(
-          //                       builder: (context, expenseStore, child) {
-          //                     return BudgetEditDailog(expenseStore);
-          //                   }),
-          //                 )),
-          //         icon: const Icon(Icons.edit))
-          //   ],
-          // )
-        ]),
+
+          const SizedBox(height: 12),
+
+          // Budget remaining text
+          if (budget.total > 0)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Remaining",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: textColor,
+                  ),
+                ),
+                Text(
+                  currencyFormat.format(budget.total - total),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? NeumorphicColors.darkAccent
+                        : NeumorphicColors.lightAccent,
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -112,34 +217,68 @@ class BudgetEditDailog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          AppBar(title: const Text("Edit Budget")),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Text(
-                    "Total Month Bugdet: ${currencyFormat.format(expenseStore.budget.total)}",
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                ),
-                ...budgetList
-                    .map((category) => BudgetInput(
-                            category, expenseStore.budget.getAmount(category),
-                            (newAmount) {
-                          expenseStore.updateBudgetAmount(category, newAmount);
-                        }))
-                    .toList()
-              ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? NeumorphicColors.darkPrimaryBackground
+        : NeumorphicColors.lightPrimaryBackground;
+
+    return Container(
+      color: backgroundColor,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            AppBar(
+              title: Text("Edit Budget",
+                  style: Theme.of(context).textTheme.titleLarge),
+              backgroundColor: backgroundColor,
+              elevation: 0,
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                children: [
+                  NeumorphicComponents.card(
+                    context: context,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        "Total Month Budget: ${currencyFormat.format(expenseStore.budget.total)}",
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...budgetList
+                      .map((category) => BudgetInput(
+                              category, expenseStore.budget.getAmount(category),
+                              (newAmount) {
+                            expenseStore.updateBudgetAmount(
+                                category, newAmount);
+                          }))
+                      .toList(),
+                  const SizedBox(height: 16),
+                  NeumorphicComponents.button(
+                    context: context,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Save',
+                      style: TextStyle(
+                        color: isDark
+                            ? NeumorphicColors.darkAccent
+                            : NeumorphicColors.lightAccent,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -147,28 +286,50 @@ class BudgetEditDailog extends StatelessWidget {
 
 class BudgetInput extends StatelessWidget {
   final String category;
-  final void Function(int newAmount) onChange;
-  final int initAmount;
+  final void Function(num newAmount) onChange;
+  final num initAmount;
 
   const BudgetInput(this.category, this.initAmount, this.onChange, {super.key});
 
   @override
   Widget build(BuildContext context) {
+    print(
+        "DEBUG: BudgetInput for category: $category, initAmount: $initAmount (type: ${initAmount.runtimeType})");
+
+    final controller = TextEditingController(text: initAmount.toString());
+
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(
-          category,
-          style: const TextStyle(fontSize: 20),
+        Expanded(
+          child: NeumorphicComponents.categoryBadge(
+            context: context,
+            text: category,
+            borderRadius: 12.0,
+          ),
         ),
+        const SizedBox(width: 16),
         SizedBox(
-            width: 100,
-            child: TextFormField(
-                keyboardType: TextInputType.number,
-                initialValue: initAmount.toString(),
-                onChanged: (val) {
-                  onChange(int.parse(val));
-                }))
+          width: 120,
+          child: NeumorphicComponents.textField(
+            context: context,
+            controller: controller,
+            keyboardType: TextInputType.number,
+            onChanged: (val) {
+              // Try to parse as int first, if fails then parse as double
+              try {
+                onChange(int.parse(val));
+              } catch (e) {
+                try {
+                  onChange(double.parse(val));
+                } catch (e) {
+                  // If all parsing fails, default to 0
+                  onChange(0);
+                }
+              }
+            },
+          ),
+        ),
       ]),
     );
   }

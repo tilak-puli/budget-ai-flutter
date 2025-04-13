@@ -104,7 +104,7 @@ class ExpenseStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateBudgetAmount(String category, int newAmount) {
+  void updateBudgetAmount(String category, num newAmount) {
     budget.updateAmount(category, newAmount);
 
     notifyListeners();

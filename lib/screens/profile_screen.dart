@@ -1,5 +1,7 @@
+import 'package:budget_ai/components/theme_toggle.dart';
 import 'package:budget_ai/screens/subscription_screen.dart';
 import 'package:budget_ai/services/subscription_service.dart';
+import 'package:budget_ai/theme/index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -49,12 +51,21 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final themeService = ThemeProvider.watch(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? NeumorphicColors.darkPrimaryBackground
+        : NeumorphicColors.lightPrimaryBackground;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: backgroundColor,
+        iconTheme: IconThemeData(
+          color: isDark
+              ? NeumorphicColors.darkTextPrimary
+              : NeumorphicColors.lightTextPrimary,
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -160,19 +171,82 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
 
                     const SizedBox(height: 40),
 
+                    // Settings section divider
+                    Row(
+                      children: [
+                        const Icon(Icons.settings, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Settings',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Divider(
+                            color: isDark
+                                ? NeumorphicColors.darkTextSecondary
+                                    .withOpacity(0.3)
+                                : NeumorphicColors.lightTextSecondary
+                                    .withOpacity(0.3),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Theme toggle setting
+                    NeumorphicComponents.card(
+                      context: context,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12.0, horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isDark ? Icons.dark_mode : Icons.light_mode,
+                              color: isDark
+                                  ? NeumorphicColors.darkAccent
+                                  : NeumorphicColors.lightAccent,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                'Dark Mode',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            ThemeToggleSwitch(
+                              isDarkMode: themeService.isDarkMode,
+                              onToggle: () => themeService.toggleTheme(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
                     // Subscription button
                     if (!_isPremium)
-                      ElevatedButton.icon(
+                      NeumorphicComponents.button(
+                        context: context,
                         onPressed: _navigateToSubscription,
-                        icon: const Icon(Icons.diamond_outlined),
-                        label: const Text('Upgrade to Premium'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.diamond_outlined),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Upgrade to Premium',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
@@ -193,10 +267,24 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                     const SizedBox(height: 40),
 
                     // Sign out button
-                    TextButton.icon(
+                    NeumorphicComponents.button(
+                      context: context,
+                      color: Colors.red.withOpacity(0.1),
                       onPressed: _signOut,
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Sign Out'),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.logout, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

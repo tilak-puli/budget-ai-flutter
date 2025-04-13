@@ -2,6 +2,7 @@ import 'package:budget_ai/api.dart';
 import 'package:budget_ai/components/body_tabs.dart';
 import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/leading_actions.dart';
+import 'package:budget_ai/components/neumorphic_app_bar.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/screens/subscription_screen.dart';
@@ -9,7 +10,9 @@ import 'package:budget_ai/screens/profile_screen.dart';
 import 'package:budget_ai/services/subscription_service.dart';
 import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
+import 'package:budget_ai/theme/index.dart';
 import 'package:budget_ai/utils/time.dart';
+import 'package:budget_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:http/src/response.dart';
 import 'dart:convert';
@@ -50,6 +53,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isSubscriptionInitialized = false;
   bool _isPremium = false;
+  int _remainingMessages = 0;
+  int _dailyMessageLimit = 5;
 
   DateTime fromDate = getMonthStart(todayDate);
   DateTime toDate = getMonthEnd(todayDate);
@@ -78,10 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
               jsonData.map((item) => item['_id'].toString()).toList();
           print("Server expense IDs: ${serverIds.join(', ')}");
 
-          // Log existing local expenses
-          final localIds = expenseStore.expenses.list.map((e) => e.id).toList();
-          print("Local expense IDs: ${localIds.join(', ')}");
-
+          // Parse server expenses
           var serverExpenses = Expenses.fromJson(jsonData);
           expenseStore.loading = false;
 
@@ -101,17 +103,63 @@ class _MyHomePageState extends State<MyHomePage> {
                 "WARNING: Found duplicate IDs in server response: ${duplicates.join(', ')}");
           }
 
-          // Merge with existing expenses, prioritizing server data
-          var mergedExpenses = expenseStore.mergeExpenses(serverExpenses);
+          // Create a Set of IDs from server expenses for quick lookup
+          final serverExpenseIdSet = serverExpenseIds.toSet();
 
-          // Only clear and update chat if we have new data
-          if (serverExpenses.list.isNotEmpty) {
-            chatStore.clear();
-            addChatMessages(mergedExpenses);
+          // Find expenses in local store that don't exist on server
+          // These might be expenses added while offline
+          final localExpenses = expenseStore.expenses.list;
+          final localOnlyExpenses = localExpenses
+              .where((expense) => !serverExpenseIdSet.contains(expense.id))
+              .toList();
+
+          if (localOnlyExpenses.isNotEmpty) {
+            print(
+                "Found ${localOnlyExpenses.length} local expenses not on server");
+            // Combine server expenses with local-only expenses
+            final combinedList = [...serverExpenses.list, ...localOnlyExpenses];
+            // Sort by date, newest first
+            combinedList.sort((a, b) => b.datetime.compareTo(a.datetime));
+
+            // Create a combined expenses list
+            final combinedExpenses = Expenses(combinedList);
+
+            print(
+                "Combined ${serverExpenses.list.length} server expenses with ${localOnlyExpenses.length} local-only expenses");
+
+            // Update the store with combined expenses
+            expenseStore.setExpenses(combinedExpenses);
+
+            // Store combined expenses locally
+            storeExpensesInStorage(combinedExpenses);
+
+            // Update chat with combined data
+            if (combinedExpenses.list.isNotEmpty) {
+              chatStore.clear();
+              addChatMessages(combinedExpenses);
+            }
+
+            print("------- END FETCH EXPENSES -------\n");
+            return combinedExpenses;
+          } else {
+            // No local-only expenses to preserve
+            print("No local-only expenses found to preserve");
+            print(
+                "Replacing local expenses with ${serverExpenses.list.length} server expenses");
+            expenseStore.setExpenses(serverExpenses);
+
+            // Store server expenses locally
+            storeExpensesInStorage(serverExpenses);
+
+            // Update chat with server data
+            if (serverExpenses.list.isNotEmpty) {
+              chatStore.clear();
+              addChatMessages(serverExpenses);
+            }
           }
 
           print("------- END FETCH EXPENSES -------\n");
-          return mergedExpenses;
+          return serverExpenses;
         } catch (e) {
           print("Error parsing expenses: $e");
           expenseStore.loading = false;
@@ -177,13 +225,84 @@ class _MyHomePageState extends State<MyHomePage> {
     if (response.statusCode == 200) {
       try {
         var jsonData = jsonDecode(response.body);
-        print(
-            "Received expense data: ${jsonData.toString().substring(0, min(50, jsonData.toString().length))}...");
+        print("API response body: ${response.body}");
+
+        // Check if response has quota information
+        if (jsonData is Map<String, dynamic> &&
+            (jsonData.containsKey('remainingQuota') ||
+                jsonData.containsKey('dailyLimit') ||
+                jsonData.containsKey('isPremium'))) {
+          // Extract quota info
+          final remainingQuota = jsonData['remainingQuota'] as int? ?? 0;
+          final dailyLimit = jsonData['dailyLimit'] as int? ?? 5;
+          final isPremium = jsonData['isPremium'] as bool? ?? false;
+
+          // Update subscription service cache with quota info
+          await _subscriptionService.updateQuotaFromResponse(
+              remainingQuota: remainingQuota,
+              dailyLimit: dailyLimit,
+              isPremium: isPremium);
+
+          // Also update local state
+          setState(() {
+            _remainingMessages = remainingQuota;
+            _dailyMessageLimit = dailyLimit;
+            _isPremium = isPremium;
+          });
+
+          print(
+              "Updated quota from response: remaining=$remainingQuota/$dailyLimit");
+
+          // Also extract and return the expense
+          if (jsonData.containsKey('expense')) {
+            return {
+              'expense': Expense.fromJson(jsonData['expense']),
+              'remainingQuota': remainingQuota,
+              'dailyLimit': dailyLimit,
+              'isPremium': isPremium
+            };
+          }
+        }
+
+        // Just return the expense if no quota info
         return Expense.fromJson(jsonData);
       } catch (e) {
         print("Error parsing expense: $e");
         return "Failed to parse the expense data";
       }
+    } else if (response.statusCode == 403 &&
+        response.body.contains('quotaExceeded')) {
+      // Handle quota exceeded error
+      try {
+        var errorData = jsonDecode(response.body);
+        if (errorData is Map<String, dynamic> &&
+            errorData.containsKey('quotaExceeded') &&
+            errorData['quotaExceeded'] == true) {
+          // Update quota info from error response
+          if (errorData.containsKey('remainingQuota') &&
+              errorData.containsKey('dailyLimit')) {
+            final remainingQuota = errorData['remainingQuota'] as int? ?? 0;
+            final dailyLimit = errorData['dailyLimit'] as int? ?? 5;
+            final isPremium = errorData['isPremium'] as bool? ?? false;
+
+            await _subscriptionService.updateQuotaFromResponse(
+                remainingQuota: remainingQuota,
+                dailyLimit: dailyLimit,
+                isPremium: isPremium);
+
+            // Also update local state
+            setState(() {
+              _remainingMessages = remainingQuota;
+              _dailyMessageLimit = dailyLimit;
+              _isPremium = isPremium;
+            });
+          }
+          return errorData['errorMessage'] ?? "Daily message quota exceeded";
+        }
+      } catch (e) {
+        print("Error parsing quota exceeded error: $e");
+      }
+      return "You've reached your daily limit of AI messages";
     } else if (response.statusCode == 401) {
       var errorMsg = jsonDecode(response.body)["errorMessage"] ??
           "Something went wrong while adding";
@@ -201,21 +320,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       print("\n------- APP INITIALIZATION -------");
-      // Initialize subscription service
-      await _subscriptionService.initializeSubscriptions();
-      final isPremium = await _subscriptionService.isPremium();
-      setState(() {
-        _isSubscriptionInitialized = true;
-        _isPremium = isPremium;
-      });
-      print("Subscription initialized, premium status: $_isPremium");
 
       // First load expenses from local storage
       print("Loading expenses from local storage...");
       Expenses localExpenses = await getExpensesFromStorage();
       print("Loaded ${localExpenses.list.length} expenses from local storage");
 
-      // Set the expenses in the store
+      // Set the expenses in the store immediately
       print("Setting expenses in the store...");
       expenseStore.setExpenses(localExpenses);
 
@@ -227,17 +338,69 @@ class _MyHomePageState extends State<MyHomePage> {
         print("No local expenses to add to chat");
       }
 
-      // Then fetch from server and merge
+      // Now that we've shown the local data, start fetching from the server
       try {
+        print("Fetching subscription data from server...");
+        // Fetch subscription data first
+        await _fetchSubscriptionData();
+
         print("Fetching expenses from server...");
+        // Then fetch expenses - this will replace the local expenses with server data
         await refreshExpenses(showLoading: false);
-        print("Successfully refreshed expenses from server");
+
+        print("Successfully refreshed data from server");
       } catch (e) {
-        print("Error refreshing expenses from server: $e");
-        // If we fail to load from the server, at least we have local data
+        print("Error refreshing data from server: $e");
+        // If server calls fail, at least we've shown the local data
+        // Initialize subscription locally as fallback
+        await _initializeSubscriptionLocally();
       }
+
       print("------- APP INITIALIZATION COMPLETE -------\n");
     });
+  }
+
+  // Fetch subscription data from server
+  Future<void> _fetchSubscriptionData() async {
+    try {
+      // Call the quota endpoint once during initialization
+      final quotaData = await _subscriptionService.getMessageQuota();
+      final quota = quotaData['quota'];
+      final isPremium = quota['isPremium'] as bool? ?? false;
+      final remainingQuota = quota['remainingQuota'] as int? ?? 0;
+      final dailyLimit = quota['dailyLimit'] as int? ?? (isPremium ? 100 : 5);
+
+      setState(() {
+        _isSubscriptionInitialized = true;
+        _isPremium = isPremium;
+        _remainingMessages = remainingQuota;
+        _dailyMessageLimit = dailyLimit;
+      });
+
+      print(
+          "Subscription initialized from server: premium=$_isPremium, remaining=$_remainingMessages/$_dailyMessageLimit");
+    } catch (e) {
+      print("Error fetching subscription data from server: $e");
+      throw e; // Let the caller handle this
+    }
+  }
+
+  // Initialize subscription locally as fallback
+  Future<void> _initializeSubscriptionLocally() async {
+    await _subscriptionService.initializeSubscriptions();
+    final isPremium = await _subscriptionService.isPremium();
+    final remainingMessages =
+        await _subscriptionService.getRemainingMessageCount() ?? 0;
+    final dailyLimit = await _subscriptionService.getDailyMessageLimit();
+
+    setState(() {
+      _isSubscriptionInitialized = true;
+      _isPremium = isPremium;
+      _remainingMessages = remainingMessages;
+      _dailyMessageLimit = dailyLimit;
+    });
+    print(
+        "Subscription initialized locally: premium=$_isPremium, remaining=$_remainingMessages/$_dailyMessageLimit");
   }
 
   Future<Expenses> getExpensesFromStorage() async {
@@ -338,25 +501,53 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       chatStore.addAtStart(TextMessage(true, userMessage));
       chatStore.addAtStart(AILoading());
-      var expense = await postExpense(userMessage);
+      var result = await postExpense(userMessage);
       chatStore.pop();
       // EasyLoading.dismiss();
 
-      if (expense is Expense) {
+      if (result is Expense) {
         // Add the expense to the UI first
+        chatStore.addAtStart(ExpenseMessage(result));
+        expenseStore.add(result);
+        storeExpensesInStorage(expenseStore.expenses);
+
+        print("Successfully added expense: ${result.id}");
+        return result;
+      } else if (result is Map<String, dynamic>) {
+        // This handles the case where we have both an expense and quota info
+        final expense = result['expense'] as Expense;
+
+        // Add the expense to the UI
         chatStore.addAtStart(ExpenseMessage(expense));
         expenseStore.add(expense);
         storeExpensesInStorage(expenseStore.expenses);
 
-        // Increment message count ONLY after successful expense creation
-        await _subscriptionService.incrementMessageCount();
+        // Update subscription service with quota info
+        if (result.containsKey('remainingQuota')) {
+          final remainingQuota = result['remainingQuota'] as int? ?? 0;
+          final dailyLimit = result['dailyLimit'] as int? ?? 5;
+          final isPremium = result['isPremium'] as bool? ?? false;
 
-        print("Successfully added expense: ${expense.id}");
+          // Update subscription service
+          await _subscriptionService.updateQuotaFromResponse(
+              remainingQuota: remainingQuota,
+              dailyLimit: dailyLimit,
+              isPremium: isPremium);
+
+          // Also update local state variables
+          setState(() {
+            _remainingMessages = remainingQuota;
+            _dailyMessageLimit = dailyLimit;
+            _isPremium = isPremium;
+          });
+        }
+
+        print("Successfully added expense with quota update: ${expense.id}");
         return expense;
       }
 
       // If we get here, the expense wasn't successfully created
-      chatStore.addAtStart(TextMessage(false, expense as String));
+      chatStore.addAtStart(TextMessage(false, result as String));
       return null;
     } catch (e) {
       developer.log(
@@ -406,90 +597,248 @@ class _MyHomePageState extends State<MyHomePage> {
     expenseStore = Provider.of<ExpenseStore>(context, listen: true);
     chatStore = Provider.of<ChatStore>(context, listen: true);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = Colors.white; // Icons are white on purple background
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        title: Row(
-          children: [
-            Text(widget.title),
-            if (_isPremium)
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Icon(
-                  Icons.workspace_premium,
-                  size: 18,
-                  color: Colors.amber,
-                ),
-              ),
-          ],
-        ),
-        leading: LeadingActions(fromDate, toDate, updateTimeFrame),
+      appBar: NeumorphicAppBar(
+        title: widget.title,
+        useAccentColor: true, // Use the purple background
+        showShadow: false, // No shadow for clean look
+        elevation: 0,
+        leading: LeadingActions(fromDate, toDate,
+            updateTimeFrame), // Month selector back in app bar
         actions: [
-          IconButton(
-            icon: const Icon(Icons.diamond_outlined),
-            onPressed: _showSubscriptionDialog,
-            tooltip: 'Upgrade to Premium',
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: IconButton(
+              icon: Icon(
+                Icons.diamond_outlined,
+                color: Colors.white,
+                size: 18,
+              ),
+              onPressed: _showSubscriptionDialog,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) async {
-              if (value == 'reset_count') {
-                // Reset message count for testing (DEV ONLY)
-                await _subscriptionService.resetMessageCount();
-                // Show a snackbar confirmation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Message count reset for testing')),
+          const SizedBox(width: 8),
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: IconButton(
+              icon: Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 18,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CustomProfileScreen(),
+                  ),
                 );
-              } else if (value == 'clear_storage') {
-                // Clear local storage (DEV ONLY)
-                await clearLocalStorage();
-                // Refresh from server
-                await refreshExpenses(showLoading: true);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'reset_count',
-                child: Text('Reset Message Count (DEV)'),
-              ),
-              const PopupMenuItem(
-                value: 'clear_storage',
-                child: Text('Clear Storage & Reload (DEV)'),
-              ),
-            ],
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CustomProfileScreen(),
-                ),
-              );
-            },
-          )
+          const SizedBox(width: 16),
         ],
-        automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Center(
-          child: Stack(children: [
+      body: Container(
+        color: isDark
+            ? NeumorphicColors.darkPrimaryBackground
+            : NeumorphicColors.lightPrimaryBackground,
+        // Remove SafeArea completely to allow background to extend to screen edges
+        child: Stack(
+          children: [
             expenseStore.loading
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                     children: [
-                      BudgetStatus(toDate.month == todayDate.month
-                          ? 'This month'
-                          : "${months[toDate.month - 1]} month"),
-                      const SizedBox(height: 10),
-                      BodyTabs(addExpense),
+                      // Unified budget card combining both date selection and budget info
+                      Consumer<ExpenseStore>(
+                        builder: (context, expenseStore, _) {
+                          // Calculate budget percentage if budget has a valid total
+                          double percentUsed = 0.0;
+                          if (expenseStore.budget.total > 0) {
+                            percentUsed = (expenseStore.expenses.total /
+                                    expenseStore.budget.total)
+                                .clamp(0.0, 1.0);
+                          }
+
+                          final remaining = expenseStore.budget.total -
+                              expenseStore.expenses.total;
+                          final percentDisplay =
+                              "${(percentUsed * 100).toStringAsFixed(0)}%";
+                          final total = expenseStore.expenses.total;
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 16.0),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? NeumorphicColors.darkCardBackground
+                                  : NeumorphicColors.lightCardBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Total spent this month
+                                  Text(
+                                    fromDate.year == todayDate.year
+                                        ? '${monthFormat.format(fromDate)} month'
+                                        : '${monthAndYearFormat.format(fromDate)} month',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? NeumorphicColors.darkTextSecondary
+                                          : NeumorphicColors.lightTextSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    currencyFormat.format(total),
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? NeumorphicColors.darkTextPrimary
+                                          : NeumorphicColors.lightTextPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Budget info
+                                  Text(
+                                    "Monthly Budget",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? NeumorphicColors.darkTextSecondary
+                                          : NeumorphicColors.lightTextSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  // Progress bar row
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            color: isDark
+                                                ? Colors.white.withOpacity(0.1)
+                                                : Colors.black
+                                                    .withOpacity(0.05),
+                                          ),
+                                          child: FractionallySizedBox(
+                                            widthFactor: percentUsed,
+                                            alignment: Alignment.centerLeft,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    isDark
+                                                        ? NeumorphicColors
+                                                            .darkAccent
+                                                        : NeumorphicColors
+                                                            .lightAccent,
+                                                    isDark
+                                                        ? NeumorphicColors
+                                                            .darkSecondaryAccent
+                                                        : NeumorphicColors
+                                                            .lightSecondaryAccent,
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        percentDisplay,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? NeumorphicColors.darkTextPrimary
+                                              : NeumorphicColors
+                                                  .lightTextPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 12),
+
+                                  // Remaining amount
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Remaining",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDark
+                                              ? NeumorphicColors.darkTextPrimary
+                                              : NeumorphicColors
+                                                  .lightTextPrimary,
+                                        ),
+                                      ),
+                                      Text(
+                                        currencyFormat.format(remaining),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark
+                                              ? NeumorphicColors.darkAccent
+                                              : NeumorphicColors.lightAccent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Tabs section
+                      Expanded(
+                        child: BodyTabs(
+                          addExpense,
+                          quotaData: {
+                            'remainingMessages': _remainingMessages,
+                            'dailyLimit': _dailyMessageLimit,
+                            'isPremium': _isPremium,
+                          },
+                        ),
+                      ),
                     ],
                   ),
-          ]),
+          ],
         ),
       ),
     );

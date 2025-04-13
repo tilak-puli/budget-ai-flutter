@@ -20,7 +20,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
   String _category = 'Food'; // Default category
   String _description = '';
   DateTime _date = DateTime.now();
-  int _amount = 0;
+  num _amount = 0;
   bool _isLoading = false;
 
   // Predefined categories
@@ -187,7 +187,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                   },
                   onSaved: (value) {
                     if (value != null) {
-                      _amount = int.parse(value);
+                      _amount = num.parse(value);
                     }
                   },
                 ),

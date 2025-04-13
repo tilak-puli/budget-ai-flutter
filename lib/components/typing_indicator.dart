@@ -1,5 +1,4 @@
-
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -119,47 +118,59 @@ class _TypingIndicatorState extends State<TypingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _indicatorSpaceAnimation,
-      builder: (context, child) {
-        return SizedBox(
-          height: _indicatorSpaceAnimation.value,
-          child: child,
-        );
-      },
-      child: Stack(
-        children: [
-          AnimatedBubble(
-            animation: _smallBubbleAnimation,
-            left: 8,
-            bottom: 8,
-            bubble: CircleBubble(
-              size: 8,
-              bubbleColor: widget.bubbleColor,
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
+      alignment: Alignment.centerLeft,
+      child: AnimatedBuilder(
+        animation: _indicatorSpaceAnimation,
+        builder: (context, child) {
+          return Material(
+            elevation: 1.0,
+            borderRadius: BorderRadius.circular(18.0),
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SizedBox(
+                height: math.max(18, _indicatorSpaceAnimation.value),
+                child: child,
+              ),
             ),
-          ),
-          AnimatedBubble(
-            animation: _mediumBubbleAnimation,
-            left: 10,
-            bottom: 10,
-            bubble: CircleBubble(
-              size: 16,
-              bubbleColor: widget.bubbleColor,
+          );
+        },
+        child: Stack(
+          children: [
+            AnimatedBubble(
+              animation: _smallBubbleAnimation,
+              left: 8,
+              bottom: 8,
+              bubble: CircleBubble(
+                size: 8,
+                bubbleColor: widget.bubbleColor,
+              ),
             ),
-          ),
-          AnimatedBubble(
-            animation: _largeBubbleAnimation,
-            left: 12,
-            bottom: 12,
-            bubble: StatusBubble(
-              repeatingController: _repeatingController,
-              dotIntervals: _dotIntervals,
-              flashingCircleDarkColor: widget.flashingCircleDarkColor,
-              flashingCircleBrightColor: widget.flashingCircleBrightColor,
-              bubbleColor: widget.bubbleColor,
+            AnimatedBubble(
+              animation: _mediumBubbleAnimation,
+              left: 10,
+              bottom: 10,
+              bubble: CircleBubble(
+                size: 10,
+                bubbleColor: widget.bubbleColor,
+              ),
             ),
-          ),
-        ],
+            AnimatedBubble(
+              animation: _largeBubbleAnimation,
+              left: 12,
+              bottom: 12,
+              bubble: StatusBubble(
+                repeatingController: _repeatingController,
+                dotIntervals: _dotIntervals,
+                flashingCircleDarkColor: widget.flashingCircleDarkColor,
+                flashingCircleBrightColor: widget.flashingCircleBrightColor,
+                bubbleColor: widget.bubbleColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -302,7 +313,7 @@ class FlashingCircle extends StatelessWidget {
         final circleFlashPercent = dotIntervals[index].transform(
           repeatingController.value,
         );
-        final circleColorPercent = sin(pi * circleFlashPercent);
+        final circleColorPercent = math.sin(math.pi * circleFlashPercent);
 
         return Container(
           width: 12,

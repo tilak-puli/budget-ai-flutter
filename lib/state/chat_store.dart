@@ -28,13 +28,11 @@ class ChatStore extends ChangeNotifier {
     notifyListeners();
   }
 
-
   void remove(String expenseId) {
     history.remove(expenseId);
 
     notifyListeners();
   }
-
 
   void pop() {
     history.pop();
@@ -59,11 +57,24 @@ class TextMessage extends ChatMessage {
 
   @override
   Widget render() {
-    return Card(
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
+      child: Material(
+        elevation: 1.0,
+        borderRadius: BorderRadius.circular(12.0),
+        color: isUserMessage ? Color(0xFFD5EFFA) : Colors.white,
         child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-      child: Text(text, style: const TextStyle(fontSize: 16),),
-    ));
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -74,7 +85,21 @@ class ExpenseMessage extends ChatMessage {
 
   @override
   Widget render() {
-    return Card(child: ExpenseCard(expense));
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
+      child: Material(
+        elevation: 1.0,
+        borderRadius: BorderRadius.circular(12.0),
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+          child: ExpenseCard(
+            expense,
+            inChatMessage: true,
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -105,13 +130,13 @@ class ChatHistory {
   }
 
   void update(String expenseId, ChatMessage updated) {
-    var messageIndex = messages.indexWhere((element) => element.expenseId == expenseId);
+    var messageIndex =
+        messages.indexWhere((element) => element.expenseId == expenseId);
 
-    if(messageIndex != -1) {
+    if (messageIndex != -1) {
       messages[messageIndex] = updated;
     }
   }
-
 
   void remove(String expenseId) {
     messages.removeWhere((element) => element.expenseId == expenseId);

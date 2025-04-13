@@ -23,7 +23,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
   late String description;
   late DateTime datetime;
   bool dateChanged = false;
-  late int amount;
+  late num amount;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +76,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
           TextFormField(
             onSaved: (value) {
               if (value != null) {
-                amount = int.parse(value);
+                amount = num.parse(value);
               }
             },
             decoration: const InputDecoration(

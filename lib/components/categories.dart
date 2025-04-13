@@ -43,5 +43,5 @@ class Categories extends StatelessWidget {
 class ChartData {
   ChartData(this.x, this.y);
   final String x;
-  final int y;
+  final num y;
 }

@@ -13,12 +13,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isPremium = false;
   int _remainingMessages = 0;
+  int _dailyMessageLimit = 5;
   List<ProductDetails> _products = [];
   bool _isLoading = true;
   bool _isRestoring = false;
 
-  // Daily message limit
+  // For subscription details
+  String? _expiryDate;
+  bool? _autoRenewing;
+  String? _platform;
+
+  // Message quotas
   static const int _freeMessageLimit = 5;
+  static const int _premiumMessageLimit = 100;
 
   @override
   void initState() {
@@ -27,23 +34,78 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _loadSubscriptionData() async {
-    // Check current subscription status
-    final isPremium = await _subscriptionService.isPremium();
+    try {
+      // Check current subscription status from server
+      final statusData = await _subscriptionService.getSubscriptionStatus();
+      final isPremium = statusData['hasSubscription'] ?? false;
 
-    // Get remaining free messages count
-    final prefs = await _subscriptionService.getRemainingMessageCount();
+      // Get subscription details if premium
+      if (isPremium && statusData['subscription'] != null) {
+        final subscription = statusData['subscription'];
+        _expiryDate = subscription['expiryDate'];
+        _autoRenewing = subscription['autoRenewing'] ?? false;
+        _platform = subscription['platform'];
+      }
 
-    // Initialize available products
-    await _subscriptionService.initializeSubscriptions();
-    final products = await _subscriptionService.getAvailableSubscriptions();
+      // Get quota information from server
+      final quotaData = await _subscriptionService.getMessageQuota();
+      final quota = quotaData['quota'];
+      int remainingMessages = 0;
+      int dailyLimit = _freeMessageLimit;
 
-    if (mounted) {
-      setState(() {
-        _isPremium = isPremium;
-        _remainingMessages = _freeMessageLimit - (prefs ?? 0);
-        _products = products;
-        _isLoading = false;
-      });
+      if (quota != null) {
+        remainingMessages = quota['remainingQuota'] ?? 0;
+        dailyLimit = quota['dailyLimit'] ??
+            (isPremium ? _premiumMessageLimit : _freeMessageLimit);
+      }
+
+      // Initialize available products
+      await _subscriptionService.initializeSubscriptions();
+      final products = await _subscriptionService.getAvailableSubscriptions();
+
+      if (mounted) {
+        setState(() {
+          _isPremium = isPremium;
+          _remainingMessages = remainingMessages;
+          _dailyMessageLimit = dailyLimit;
+          _products = products;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading subscription data from server: $e');
+
+      // Fall back to local data
+      try {
+        // Check current subscription status locally
+        final isPremium = await _subscriptionService.isPremium();
+
+        // Get remaining messages
+        final remainingCount =
+            await _subscriptionService.getRemainingMessageCount() ?? 0;
+        final limit = isPremium ? _premiumMessageLimit : _freeMessageLimit;
+
+        // Initialize available products
+        await _subscriptionService.initializeSubscriptions();
+        final products = await _subscriptionService.getAvailableSubscriptions();
+
+        if (mounted) {
+          setState(() {
+            _isPremium = isPremium;
+            _remainingMessages = remainingCount;
+            _dailyMessageLimit = limit;
+            _products = products;
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print('Error loading local subscription data: $e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -140,7 +202,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             const SizedBox(height: 8),
                             if (!_isPremium) ...[
                               Text(
-                                'You have $_remainingMessages free messages remaining today.',
+                                'You have $_remainingMessages/${_dailyMessageLimit} free messages remaining today.',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                               const SizedBox(height: 16),
@@ -149,10 +211,29 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ] else ...[
-                              const Text(
-                                'You have unlimited messages and full access to all features!',
+                              Text(
+                                'You have $_remainingMessages/${_dailyMessageLimit} premium messages remaining.',
                                 style: TextStyle(fontSize: 16),
                               ),
+                              const SizedBox(height: 8),
+                              if (_expiryDate != null) ...[
+                                Text(
+                                  'Subscription expires: $_expiryDate',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Auto-renewing: ${_autoRenewing == true ? 'Yes' : 'No'}',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                if (_platform != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Platform: $_platform',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              ],
                             ],
                           ],
                         ),
