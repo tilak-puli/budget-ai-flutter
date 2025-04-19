@@ -9,30 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> storeExpensesInStorage(Expenses expenses) async {
   try {
-    print("\n------- STORING EXPENSES LOCALLY -------");
-    print("Storing ${expenses.list.length} expenses");
-
     // Convert to JSON and serialize
     final serialized = jsonEncode(expenses.list);
-
-    // Get the first few expenses for logging
-    final sampleExpenses = expenses.list
-        .take(3)
-        .map((e) => "ID: ${e.id}, Amount: ${e.amount}, Category: ${e.category}")
-        .join("\n");
-
-    print("Sample expenses to store:\n$sampleExpenses");
-    print("Total serialized length: ${serialized.length} characters");
-
     // Store in shared preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("expenses", serialized);
-
-    // Verify storage
-    final savedData = prefs.getString("expenses");
-    print("Verification - Data stored: ${savedData != null}");
-    print("Verification - Data length: ${savedData?.length ?? 0} characters");
-    print("------- EXPENSES STORED LOCALLY -------\n");
   } catch (e) {
     print("ERROR STORING EXPENSES: $e");
   }

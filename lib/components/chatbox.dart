@@ -47,7 +47,6 @@ class Chatbox extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12.0),
                         child: ListView.builder(
-                          reverse: true,
                           itemCount: chatStore.history.messages.length,
                           itemBuilder: (context, index) {
                             final message = chatStore.history.messages[index];

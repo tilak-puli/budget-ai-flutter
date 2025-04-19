@@ -15,6 +15,8 @@ class ChatStore extends ChangeNotifier {
 
   void clear() {
     history.messages.clear();
+
+    notifyListeners();
   }
 
   void addAtStart(ChatMessage chatMessage) {

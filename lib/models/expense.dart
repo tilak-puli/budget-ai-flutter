@@ -23,7 +23,7 @@ class Expense {
         data.containsKey('expense') ? data['expense'] : data;
 
     // Get ID - handle different field names
-    String id;
+    String id; 
     if (expenseData['_id'] is Map) {
       // If _id is an object (empty or not), generate a new UUID
       id = const Uuid().v4();

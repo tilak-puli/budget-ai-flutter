@@ -78,30 +78,43 @@ class NeumorphicComponents {
     Color? color,
     double size = 56.0,
     double depth = 5.0,
+    bool isDisabled = false,
   }) {
     return StatefulBuilder(
       builder: (context, setState) {
         bool isPressed = false;
 
+        final buttonColor = isDisabled ? Colors.grey.withOpacity(0.3) : color;
+        final effectiveDepth = isDisabled ? depth * 0.5 : depth;
+
         return GestureDetector(
-          onTapDown: (_) => setState(() => isPressed = true),
-          onTapUp: (_) {
-            setState(() => isPressed = false);
-            onPressed();
-          },
-          onTapCancel: () => setState(() => isPressed = false),
+          onTapDown:
+              isDisabled ? null : (_) => setState(() => isPressed = true),
+          onTapUp: isDisabled
+              ? null
+              : (_) {
+                  setState(() => isPressed = false);
+                  onPressed();
+                },
+          onTapCancel:
+              isDisabled ? null : () => setState(() => isPressed = false),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: size,
             height: size,
             decoration: NeumorphicBox.decoration(
               context: context,
-              color: color,
+              color: buttonColor,
               borderRadius: size / 2,
-              depth: depth,
+              depth: effectiveDepth,
               isPressed: isPressed,
             ),
-            child: Center(child: icon),
+            child: Center(
+              child: Opacity(
+                opacity: isDisabled ? 0.6 : 1.0,
+                child: icon,
+              ),
+            ),
           ),
         );
       },
@@ -119,71 +132,95 @@ class NeumorphicComponents {
     bool showBadge = false,
     String badgeText = "",
     Color badgeColor = Colors.green,
+    bool isDisabled = false,
   }) {
     return StatefulBuilder(
       builder: (context, setState) {
         bool isPressed = false;
 
-        return Stack(
-          children: [
-            // The main button
-            GestureDetector(
-              onTapDown: (_) => setState(() => isPressed = true),
-              onTapUp: (_) {
-                setState(() => isPressed = false);
-                onPressed();
-              },
-              onTapCancel: () => setState(() => isPressed = false),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: size,
-                height: size,
-                decoration: NeumorphicBox.decoration(
-                  context: context,
-                  color: color,
-                  borderRadius: size / 2,
-                  depth: depth,
-                  isPressed: isPressed,
-                ),
-                child: Center(child: icon),
-              ),
-            ),
+        final buttonColor = isDisabled ? Colors.grey.withOpacity(0.3) : color;
+        final effectiveDepth = isDisabled ? depth * 0.5 : depth;
 
-            // The badge (if showing)
-            if (showBadge)
+        return Container(
+          width: size + 10, // Add extra space for the badge
+          height: size + 10, // Add extra space for the badge
+          child: Stack(
+            children: [
+              // The main button - centered in the container
               Positioned(
-                bottom: -5,
-                right: -3,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 26,
-                    minHeight: 18,
-                  ),
-                  child: Text(
-                    badgeText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
+                top: 5,
+                left: 5,
+                child: GestureDetector(
+                  onTapDown: isDisabled
+                      ? null
+                      : (_) => setState(() => isPressed = true),
+                  onTapUp: isDisabled
+                      ? null
+                      : (_) {
+                          setState(() => isPressed = false);
+                          onPressed();
+                        },
+                  onTapCancel: isDisabled
+                      ? null
+                      : () => setState(() => isPressed = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: size,
+                    height: size,
+                    decoration: NeumorphicBox.decoration(
+                      context: context,
+                      color: buttonColor,
+                      borderRadius: size / 2,
+                      depth: effectiveDepth,
+                      isPressed: isPressed,
                     ),
-                    textAlign: TextAlign.center,
+                    child: Center(
+                      child: Opacity(
+                        opacity: isDisabled ? 0.6 : 1.0,
+                        child: icon,
+                      ),
+                    ),
                   ),
                 ),
               ),
-          ],
+
+              // The badge (if showing) - now properly positioned
+              if (showBadge)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: badgeColor,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                      // Add a border for better visibility
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.7),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );

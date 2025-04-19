@@ -135,6 +135,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
+  // Helper function to clean product title
+  String _cleanProductTitle(String title) {
+    // Get everything before the first parenthesis and trim whitespace
+    return title.split('(')[0].trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,13 +251,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 16),
-                    _buildFeatureItem(Icons.message, 'Unlimited AI Messages'),
+                    _buildFeatureItem(Icons.message, '100 AI Messages per day'),
+                    _buildFeatureItem(Icons.analytics_outlined,
+                        'AI-Powered Weekly Reports [coming soon]'),
+                    _buildFeatureItem(Icons.lightbulb_outline,
+                        'Smart Savings Suggestions [coming soon]'),
                     _buildFeatureItem(
-                        Icons.analytics_outlined, 'AI-Powered Weekly Reports'),
-                    _buildFeatureItem(
-                        Icons.lightbulb_outline, 'Smart Savings Suggestions'),
-                    _buildFeatureItem(Icons.speed, 'Priority Processing'),
-                    _buildFeatureItem(Icons.file_download, 'Data Export'),
+                        Icons.file_download, 'Data Export [coming soon]'),
 
                     const SizedBox(height: 24),
 
@@ -290,8 +296,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 depth: 4.0,
                               ),
                               child: ListTile(
-                                title: Text(product.title),
-                                subtitle: Text(product.description),
+                                title: Text(_cleanProductTitle(product.title)),
+                                subtitle: product.description.isNotEmpty
+                                    ? Text(product.description)
+                                    : null,
                                 trailing: Container(
                                   decoration: NeumorphicBox.buttonDecoration(
                                     context: context,

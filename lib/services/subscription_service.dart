@@ -9,6 +9,8 @@ class SubscriptionService {
   static const String _messageCountKey = 'daily_message_count';
   static const String _lastResetDateKey = 'last_reset_date';
   static const String _hasPremiumKey = 'has_premium';
+  static const String _lastQuotaKey = 'last_quota';
+  static const String _lastQuotaDateKey = 'last_quota_date';
   static const int _freeMessageLimit = 5;
   static const int _premiumMessageLimit = 100;
 
@@ -296,7 +298,63 @@ class SubscriptionService {
     return prefs.getBool(_hasPremiumKey) ?? false;
   }
 
-  // Get message quota from server
+  // Get initial quota from local storage
+  Future<Map<String, dynamic>> getInitialQuota() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastQuotaDate = prefs.getString(_lastQuotaDateKey);
+    final lastQuota = prefs.getInt(_lastQuotaKey);
+    final isPremium = prefs.getBool(_hasPremiumKey) ?? false;
+    final limit = isPremium ? _premiumMessageLimit : _freeMessageLimit;
+
+    // If last quota date is not today, reset to full quota
+    if (lastQuotaDate == null ||
+        !isSameDay(DateTime.parse(lastQuotaDate), DateTime.now())) {
+      print('New day detected, resetting quota to full');
+      return {
+        'quota': {
+          'hasQuotaLeft': true,
+          'remainingQuota': limit,
+          'dailyLimit': limit,
+          'isPremium': isPremium
+        }
+      };
+    }
+
+    // Use cached quota if available
+    if (lastQuota != null) {
+      print('Using cached quota: $lastQuota');
+      return {
+        'quota': {
+          'hasQuotaLeft': lastQuota > 0,
+          'remainingQuota': lastQuota,
+          'dailyLimit': limit,
+          'isPremium': isPremium
+        }
+      };
+    }
+
+    // Default to full quota if no cache
+    return {
+      'quota': {
+        'hasQuotaLeft': true,
+        'remainingQuota': limit,
+        'dailyLimit': limit,
+        'isPremium': isPremium
+      }
+    };
+  }
+
+  // Update local quota cache
+  Future<void> updateLocalQuota(int remainingQuota, bool isPremium) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastQuotaKey, remainingQuota);
+    await prefs.setString(_lastQuotaDateKey, DateTime.now().toIso8601String());
+    await prefs.setBool(_hasPremiumKey, isPremium);
+    print(
+        'Updated local quota cache: remaining=$remainingQuota, isPremium=$isPremium');
+  }
+
+  // Modified getMessageQuota to use local cache first
   Future<Map<String, dynamic>> getMessageQuota() async {
     // Use cached value if available and recent
     if (_cachedQuotaData != null && _lastQuotaCheck != null) {
@@ -308,43 +366,50 @@ class SubscriptionService {
     }
 
     try {
+      // Get initial quota from local storage
+      final initialQuota = await getInitialQuota();
+
+      // Start fetching from server in background
+      _fetchQuotaFromServer().then((serverQuota) {
+        if (serverQuota != null) {
+          _cachedQuotaData = serverQuota;
+          _lastQuotaCheck = DateTime.now();
+
+          // Update local cache with server data
+          final quota = serverQuota['quota'];
+          if (quota != null) {
+            final remaining = quota['remainingQuota'] as int? ?? 0;
+            final isPremium = quota['isPremium'] as bool? ?? false;
+            updateLocalQuota(remaining, isPremium);
+          }
+        }
+      });
+
+      // Return initial quota immediately
+      return initialQuota;
+    } catch (e) {
+      print('Error getting message quota: $e');
+      // Return initial quota on error
+      return await getInitialQuota();
+    }
+  }
+
+  // Separate method for server quota fetch
+  Future<Map<String, dynamic>?> _fetchQuotaFromServer() async {
+    try {
       final response = await http.get(
         Uri.parse('$_baseUrl$_messageQuotaEndpoint'),
         headers: await _getAuthHeaders(),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        // Cache the result
-        _cachedQuotaData = data;
-        _lastQuotaCheck = DateTime.now();
-
-        // Update local count for offline access
-        final quota = data['quota'];
-        if (quota != null) {
-          final remaining = quota['remainingQuota'] as int? ?? 0;
-          final isPremium = quota['isPremium'] as bool? ?? false;
-          final limit = quota['dailyLimit'] as int? ??
-              (isPremium ? _premiumMessageLimit : _freeMessageLimit);
-
-          // Store the updated count locally
-          final prefs = await SharedPreferences.getInstance();
-          final usedCount = limit - remaining;
-          await prefs.setInt(_messageCountKey, usedCount < 0 ? 0 : usedCount);
-
-          // Cache the remaining count
-          _cachedRemainingCount = remaining;
-        }
-
-        return data;
-      } else {
-        print('Error getting message quota: ${response.statusCode}');
-        throw Exception('Failed to get message quota');
+        return json.decode(response.body);
       }
+      print('Error getting message quota from server: ${response.statusCode}');
+      return null;
     } catch (e) {
-      print('Error getting message quota: $e');
-      throw e;
+      print('Error fetching quota from server: $e');
+      return null;
     }
   }
 
@@ -531,11 +596,23 @@ class SubscriptionService {
     _cachedPremiumStatus = isPremium;
     _lastSubscriptionCheck = DateTime.now();
 
-    // Also update local storage for offline access
+    // Update local storage for offline access
     final prefs = await SharedPreferences.getInstance();
     final usedCount = dailyLimit - remainingQuota;
     await prefs.setInt(_messageCountKey, usedCount < 0 ? 0 : usedCount);
     await prefs.setBool(_hasPremiumKey, isPremium);
+
+    // Store structured subscription data for more complete offline access
+    final Map<String, dynamic> subscriptionData = {
+      'isPremium': isPremium,
+      'remainingQuota': remainingQuota,
+      'dailyLimit': dailyLimit,
+      'lastUpdated': DateTime.now().toIso8601String(),
+    };
+
+    final serialized = jsonEncode(subscriptionData);
+    await prefs.setString("subscription_data", serialized);
+    print('Stored full subscription data in local storage');
   }
 
   // Get cached quota data without making an API call

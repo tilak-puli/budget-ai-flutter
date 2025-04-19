@@ -5,6 +5,7 @@ import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/services/subscription_service.dart';
 import 'package:budget_ai/theme/index.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AIMessageInput extends StatefulWidget {
   final Function(dynamic) onAddMessage;
@@ -33,6 +34,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
   int _dailyLimit = 5;
   bool _isPremium = false;
   bool _isLoading = true;
+  bool _isShowingHint = false; // Add flag to track dialog state
 
   // Store the free message limit
   static const int _freeMessageLimit = 5;
@@ -58,6 +60,9 @@ class _AIMessageInputState extends State<AIMessageInput> {
       // Only call API if parent didn't provide values
       _loadSubscriptionData();
     }
+
+    // Check and show onboarding hint once
+    _checkAndShowHint();
   }
 
   @override
@@ -79,6 +84,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
 
   @override
   void dispose() {
+    // Make sure we cleanup if widget is disposed while dialog is showing
+    _isShowingHint = false;
     _controller.dispose();
     super.dispose();
   }
@@ -174,6 +181,20 @@ class _AIMessageInputState extends State<AIMessageInput> {
     );
   }
 
+  // Check if hint should be shown and show it only once
+  Future<void> _checkAndShowHint() async {
+    if (_isShowingHint) return; // Prevent multiple calls
+
+    final shouldShow = await _shouldShowButtonHint();
+    if (shouldShow && mounted) {
+      _isShowingHint = true;
+      // Small delay to ensure the widget is fully built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showButtonHint(context);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -191,7 +212,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
       children: [
         // Message input area with neumorphic styling
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
           child: Row(
             children: [
               // Text input field
@@ -199,7 +220,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
                 child: NeumorphicComponents.textField(
                   context: context,
                   controller: _controller,
-                  hintText: "What's the expense?",
+                  hintText: "Describe your expense (e.g., '250 for lunch')",
                   prefixIcon: Icon(
                     Icons.message_outlined,
                     color: isDark
@@ -215,57 +236,308 @@ class _AIMessageInputState extends State<AIMessageInput> {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: 8), // Reduced spacing from 14 to 8
 
-              // Add expense button (floating action button)
-              NeumorphicComponents.circularButton(
-                context: context,
-                size: 48,
-                depth: 4.0,
-                color: Theme.of(context)
-                    .colorScheme
-                    .secondary
-                    .withOpacity(isDark ? 0.8 : 0.2),
-                icon: Icon(
-                  Icons.add,
-                  color: Theme.of(context).colorScheme.secondary,
-                  size: 24,
+              // Add expense button (floating action button with tooltip)
+              Tooltip(
+                message: "Add expense manually",
+                preferBelow: false,
+                verticalOffset: 20,
+                showDuration: const Duration(seconds: 2),
+                child: NeumorphicComponents.circularButton(
+                  context: context,
+                  size: 48,
+                  depth: 4.0,
+                  color: isDark
+                      ? Colors.grey
+                          .withOpacity(0.2) // Muted background for dark mode
+                      : Colors.grey
+                          .withOpacity(0.1), // Muted background for light mode
+                  icon: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add,
+                        color: isDark
+                            ? Colors
+                                .grey[400] // Less vibrant color in dark mode
+                            : Colors
+                                .grey[600], // Less vibrant color in light mode
+                        size: 22,
+                      ),
+                      Text(
+                        "Add",
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? Colors
+                                  .grey[400] // Less vibrant color in dark mode
+                              : Colors.grey[
+                                  600], // Less vibrant color in light mode
+                        ),
+                      ),
+                    ],
+                  ),
+                  onPressed: _showCreateExpenseForm,
                 ),
-                onPressed: _showCreateExpenseForm,
               ),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: 8), // Reduced spacing from 14 to 8
 
-              // Send message button
-              NeumorphicComponents.circularButtonWithBadge(
-                context: context,
-                size: 48,
-                depth: 4.0,
-                color: (_remainingMessages <= 0 && !_isPremium)
-                    ? Colors.grey.withOpacity(0.3)
-                    : accentColor.withOpacity(isDark ? 0.3 : 0.1),
-                icon: Icon(
-                  Icons.send,
-                  color: (_remainingMessages <= 0 && !_isPremium)
-                      ? Colors.grey
-                      : accentColor,
-                  size: 20,
-                ),
-                showBadge: !_isPremium && !_isLoading,
-                badgeText: '$_remainingMessages/$_dailyLimit',
-                badgeColor: _remainingMessages > 0 ? Colors.green : Colors.red,
-                onPressed: (_controller.text.trim().isEmpty ||
+              // Send message button with tooltip
+              Tooltip(
+                message: "Send expense message",
+                preferBelow: false,
+                verticalOffset: 20,
+                showDuration: const Duration(seconds: 2),
+                child: NeumorphicComponents.circularButtonWithBadge(
+                  context: context,
+                  size: 48,
+                  depth: 4.0,
+                  // More vibrant color even when disabled
+                  color: accentColor.withOpacity(isDark ? 0.4 : 0.2),
+                  icon: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.send,
+                        color: (_remainingMessages <= 0 && !_isPremium)
+                            ? accentColor.withOpacity(
+                                0.5) // Still colored but dimmed when disabled
+                            : accentColor,
+                        size: 18,
+                      ),
+                      Text(
+                        "Send",
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: (_remainingMessages <= 0 && !_isPremium)
+                              ? accentColor.withOpacity(
+                                  0.5) // Still colored but dimmed when disabled
+                              : accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Only show badge when user isn't premium and has limited messages
+                  showBadge: !_isPremium && !_isLoading && _dailyLimit > 0,
+                  // Just show the remaining count (simpler)
+                  badgeText: '$_remainingMessages',
+                  badgeColor: _getMessageCountColor(),
+                  isDisabled: _controller.text.trim().isEmpty ||
+                      widget.isDisabled ||
+                      (_remainingMessages <= 0 && !_isPremium),
+                  onPressed: () {
+                    if (!(_controller.text.trim().isEmpty ||
                         widget.isDisabled ||
-                        (_remainingMessages <= 0 && !_isPremium))
-                    ? () {} // Provide an empty function instead of null
-                    : () {
-                        _onSendPressed();
-                      },
+                        (_remainingMessages <= 0 && !_isPremium))) {
+                      _onSendPressed();
+                    }
+                  },
+                ),
               ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  // Check if we should show the button hint to new users
+  Future<bool> _shouldShowButtonHint() async {
+    try {
+      // Check if hint is already showing
+      if (_isShowingHint) return false;
+
+      // Get stored preference for hint
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenHint = prefs.getBool('has_seen_fab_hint') ?? false;
+
+      // Return true if hint has not been seen
+      return !hasSeenHint;
+    } catch (e) {
+      print("Error checking hint preference: $e");
+      return false;
+    }
+  }
+
+  // Mark hint as seen in persistent storage
+  Future<void> _markHintAsSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_seen_fab_hint', true);
+      print("Marked onboarding hint as seen");
+    } catch (e) {
+      print("Error saving hint preference: $e");
+    } finally {
+      // Always reset the flag
+      if (mounted) {
+        setState(() {
+          _isShowingHint = false;
+        });
+      }
+    }
+  }
+
+  // Show a helpful hint about the buttons
+  void _showButtonHint(BuildContext context) async {
+    // If already showing, don't show it again
+    if (!mounted || !_isShowingHint) return;
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor =
+        isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissal by tapping outside
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.lightbulb_outline, color: accentColor),
+            const SizedBox(width: 10),
+            const Text("Quick Expense Entry"),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHintItem(
+              context,
+              icon: Icons.chat_outlined,
+              title: "AI-Powered Expense Entry",
+              description:
+                  "Simply type what you spent money on and let AI figure out the details.",
+              example: "\"250 for lunch\"  or  \"1038 face wash\"",
+            ),
+            const SizedBox(height: 16),
+            _buildHintItem(
+              context,
+              icon: Icons.add_circle_outline,
+              title: "Manual Entry",
+              description:
+                  "Tap the + button to enter expense details manually with categories.",
+            ),
+            const SizedBox(height: 16),
+            _buildHintItem(
+              context,
+              icon: Icons.send,
+              title: "Send Button",
+              description:
+                  "Tap the send button once you've typed your expense.",
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            icon:
+                Icon(Icons.check_circle_outline, color: accentColor, size: 18),
+            label: Text(
+              "Got it",
+              style: TextStyle(color: accentColor),
+            ),
+            onPressed: () async {
+              // Save that user has seen the hint
+              await _markHintAsSeen();
+
+              if (mounted) Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    ).then((_) {
+      // Ensure flag is reset even if dialog is dismissed another way
+      if (mounted) {
+        setState(() {
+          _isShowingHint = false;
+        });
+      }
+    });
+  }
+
+  // Helper method to build a consistent hint item
+  Widget _buildHintItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String description,
+    String? example,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark
+        ? NeumorphicColors.darkTextPrimary
+        : NeumorphicColors.lightTextPrimary;
+    final descColor = isDark
+        ? NeumorphicColors.darkTextSecondary
+        : NeumorphicColors.lightTextSecondary;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.secondary),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: titleColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: descColor,
+                ),
+              ),
+              if (example != null) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.grey.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Text(
+                    "Examples: $example",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: descColor,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Determine badge color based on remaining messages
+  Color _getMessageCountColor() {
+    if (_remainingMessages <= 0) {
+      return Colors.red;
+    } else if (_remainingMessages <= 2) {
+      return Colors.orange; // Low count warning
+    } else {
+      return Colors.green;
+    }
   }
 }
