@@ -175,7 +175,7 @@ class ExpenseDailog extends StatelessWidget {
       return;
     }
 
-    expenseStore.deleteExpense(expense.id);
+    expenseStore.deleteExpense(expense.id, context: this.context);
     chatStore.remove(expense.id);
 
     EasyLoading.dismiss();
@@ -191,7 +191,7 @@ class ExpenseDailog extends StatelessWidget {
       return;
     }
 
-    expenseStore.updateExpense(expense.id, newExpense);
+    expenseStore.updateExpense(expense.id, newExpense, context: this.context);
     chatStore.updateMessage(expense.id, ExpenseMessage(newExpense));
 
     EasyLoading.dismiss();

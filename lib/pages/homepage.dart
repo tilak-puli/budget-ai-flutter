@@ -7,12 +7,15 @@ import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/screens/subscription_screen.dart';
 import 'package:budget_ai/screens/profile_screen.dart';
+import 'package:budget_ai/screens/budget_screen.dart';
 import 'package:budget_ai/services/subscription_service.dart';
 import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
+import 'package:budget_ai/state/budget_store.dart';
 import 'package:budget_ai/theme/index.dart';
 import 'package:budget_ai/utils/time.dart';
 import 'package:budget_ai/utils/money.dart';
+import 'package:budget_ai/constants/config_keys.dart';
 import 'package:flutter/material.dart';
 import 'package:http/src/response.dart';
 import 'dart:convert';
@@ -20,6 +23,7 @@ import 'dart:math';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:budget_ai/services/app_init_service.dart';
 
 var todayDate = DateTime.now();
 
@@ -63,6 +67,26 @@ Future<void> storeSubscriptionDataInStorage(
   }
 }
 
+// Function to store config data in local storage
+Future<void> storeConfigDataInStorage(Map<String, dynamic> config) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final Map<String, dynamic> configData = {
+      'config': config,
+      'lastUpdated': DateTime.now().toIso8601String(),
+    };
+
+    // Convert to JSON and serialize
+    final serialized = jsonEncode(configData);
+    // Store in shared preferences
+    await prefs.setString("config_data", serialized);
+
+    developer.log('Config data stored in local storage: $config');
+  } catch (e) {
+    developer.log("ERROR STORING CONFIG DATA: $e");
+  }
+}
+
 // Function to get subscription data from local storage
 Future<Map<String, dynamic>?> getSubscriptionDataFromStorage() async {
   try {
@@ -84,6 +108,27 @@ Future<Map<String, dynamic>?> getSubscriptionDataFromStorage() async {
   }
 }
 
+// Function to get config data from local storage
+Future<Map<String, dynamic>?> getConfigDataFromStorage() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString("config_data");
+
+    if (storedData == null || storedData.isEmpty) {
+      return null;
+    }
+
+    // Parse the JSON
+    final configData = jsonDecode(storedData) as Map<String, dynamic>;
+
+    developer.log('Config data retrieved from local storage');
+    return configData['config'] as Map<String, dynamic>;
+  } catch (e) {
+    developer.log("ERROR RETRIEVING CONFIG DATA: $e");
+    return null;
+  }
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
@@ -97,6 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late ExpenseStore expenseStore;
   late ChatStore chatStore;
   final SubscriptionService _subscriptionService = SubscriptionService();
+  final AppInitService _appInitService = AppInitService();
   bool _isSubscriptionInitialized = false;
   bool _isPremium = false;
   int _remainingMessages = 0;
@@ -107,107 +153,102 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<Expenses> fetchExpenses({bool showLoading = true}) async {
     expenseStore.loading = showLoading;
-    var response;
 
     try {
-      response = await ApiService().fetchExpenses(fromDate, toDate);
+      // Use the unified app init API instead of separate API calls
+      final initData = await _appInitService.fetchAppInitData(
+          fromDate: fromDate,
+          toDate: toDate,
+          forceRefresh: showLoading // Force refresh if explicitly requested
+          );
 
-      if (response.statusCode == 200) {
-        try {
-          var jsonData = jsonDecode(response.body);
-
-          // Check for quota information in the response
-          if (jsonData is Map<String, dynamic> &&
-              jsonData.containsKey('quota')) {
-            final quota = jsonData['quota'];
-            final isPremium = quota['isPremium'] as bool? ?? false;
-            final remainingQuota = quota['remainingQuota'] as int? ?? 0;
-            final dailyLimit = quota['dailyLimit'] as int? ?? 5;
-
-            // Update subscription data in local storage
-            await storeSubscriptionDataInStorage(
-              isPremium: isPremium,
-              remainingQuota: remainingQuota,
-              dailyLimit: dailyLimit,
-            );
-
-            // Update subscription service with quota info
-            await _subscriptionService.updateQuotaFromResponse(
-              remainingQuota: remainingQuota,
-              dailyLimit: dailyLimit,
-              isPremium: isPremium,
-            );
-
-            // Update local state variables
-            setState(() {
-              _isSubscriptionInitialized = true;
-              _isPremium = isPremium;
-              _remainingMessages = remainingQuota;
-              _dailyMessageLimit = dailyLimit;
-            });
-
-            // Extract the expenses list from the response
-            if (jsonData.containsKey('expenses')) {
-              jsonData = jsonData['expenses'] as List<dynamic>;
-            } else {
-              // If there's no explicit expenses key, assume the list is elsewhere or use an empty list
-              jsonData = jsonData['list'] as List<dynamic>? ?? [];
-            }
-          }
-
-          // Parse server expenses (handling both array response and nested objects)
-          var serverExpenses = (jsonData is List)
-              ? Expenses.fromJson(jsonData)
-              : Expenses.fromJson(jsonData['list'] ?? []);
-
-          expenseStore.loading = false;
-
-          expenseStore.setExpenses(serverExpenses);
-          storeExpensesInStorage(serverExpenses);
-
-          // Update chat with server data
-          chatStore.clear();
-          addChatMessages(serverExpenses);
-
-          return serverExpenses;
-        } catch (e) {
-          expenseStore.loading = false;
-          throw Exception('Failed to parse expenses: $e');
-        }
-      } else {
+      if (initData == null) {
         expenseStore.loading = false;
-        throw Exception('Failed to load expenses: ${response.statusCode}');
+        throw Exception('Failed to load app data');
       }
+
+      // Also update the BudgetStore with data from the init response
+      final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+      budgetStore.initializeFromAppData(initData);
+      developer.log('Updated BudgetStore with data from init API response');
+
+      // Process quota information
+      final quota = initData.quota;
+      final isPremium = quota.isPremium;
+      final remainingQuota = quota.remainingQuota;
+      final dailyLimit = quota.dailyLimit;
+
+      // Store config data in local storage
+      await storeConfigDataInStorage(initData.config);
+      developer.log('Stored config data from init API in local storage');
+
+      // Update subscription service with quota info
+      await _subscriptionService.updateQuotaFromResponse(
+        remainingQuota: remainingQuota,
+        dailyLimit: dailyLimit,
+        isPremium: isPremium,
+      );
+
+      // Store subscription data in local storage
+      await storeSubscriptionDataInStorage(
+        isPremium: isPremium,
+        remainingQuota: remainingQuota,
+        dailyLimit: dailyLimit,
+      );
+
+      // Update local state variables
+      setState(() {
+        _isSubscriptionInitialized = true;
+        _isPremium = isPremium;
+        _remainingMessages = remainingQuota;
+        _dailyMessageLimit = dailyLimit;
+      });
+
+      // Convert to Expenses object and update store
+      final serverExpenses = _appInitService.getExpensesFromInitData(initData);
+
+      expenseStore.loading = false;
+      expenseStore.setExpenses(serverExpenses);
+
+      // Also update date range in expense store
+      expenseStore.fromDate = initData.dateRange.fromDate;
+      expenseStore.toDate = initData.dateRange.toDate;
+
+      // Update chat with server data
+      chatStore.clear();
+      addChatMessages(serverExpenses);
+
+      return serverExpenses;
     } catch (e) {
       expenseStore.loading = false;
-      chatStore.addAtStart(
-          TextMessage(false, "Error loading expenses: ${e.toString()}"));
+      chatStore
+          .add(TextMessage(false, "Error loading expenses: ${e.toString()}"));
+      developer.log('Error in fetchExpenses: ${e.toString()}');
       rethrow;
     }
   }
 
   void addChatMessages(Expenses expenses) {
     if (expenses.isEmpty) {
-      chatStore.addAtStart(TextMessage(true,
+      chatStore.add(TextMessage(true,
           "Just send a message loosely describing your expense to start your finance journey with AI."));
       return;
     }
 
-    // Add the 10 most recent expenses to the chat
-    int count = 0;
-    for (var expense in expenses.list) {
-      if (count >= 10) break; // Limit to 10 expenses
+    // First, take the 10 most recent expenses (they're already sorted newest first)
+    final recentExpenses = expenses.list.take(10).toList();
 
-      // Add the expense message
-      chatStore.addAtStart(ExpenseMessage(expense));
+    // Then reverse them so oldest appears at top and newest at bottom in the chat
+    final chronologicalExpenses = recentExpenses.reversed.toList();
 
+    // Add the expenses to the chat in chronological order
+    for (var expense in chronologicalExpenses) {
       // Add the prompt if it exists
       if (expense.prompt != null && expense.prompt!.isNotEmpty) {
-        chatStore.addAtStart(TextMessage(true, expense.prompt!));
-        count++;
+        chatStore.add(TextMessage(true, expense.prompt!));
       }
-
-      count++;
+      // Add the expense message
+      chatStore.add(ExpenseMessage(expense));
     }
   }
 
@@ -393,6 +434,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
+    // Initialize expenses and chatStore
+    expenseStore = Provider.of<ExpenseStore>(context, listen: false);
+    chatStore = Provider.of<ChatStore>(context, listen: false);
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // First load expenses from local storage
       Expenses localExpenses = await getExpensesFromStorage();
@@ -420,12 +465,35 @@ class _MyHomePageState extends State<MyHomePage> {
         addChatMessages(localExpenses);
       }
 
-      // Now that we've shown the local data, start fetching from the server
+      // Now call the unified init API to get all updated data
       try {
-        // Fetch expenses (which will also update subscription data)
-        refreshExpenses(showLoading: false);
+        developer.log('Calling unified init API to get fresh data...');
+
+        // Call the refresh expenses function which uses the init API
+        final updatedExpenses = await refreshExpenses(showLoading: true);
+        developer.log(
+            'Successfully retrieved ${updatedExpenses.list.length} expenses from init API');
+
+        // The budget store will be automatically updated with the data from init API
+        // in the fetchExpenses method via the initializeFromAppData flow
       } catch (e) {
-        developer.log('Failed to fetch expenses from server: $e');
+        developer.log('Error fetching data from init API: $e');
+
+        // Fallback to separate API calls if needed
+        try {
+          // Prepare all API calls
+          final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+
+          // Get budget data
+          await budgetStore.initializeBudget().catchError((e) {
+            developer.log('Error fetching budget config: $e');
+            return null; // Just continue if budget config fails
+          });
+
+          developer.log('Fallback API calls completed');
+        } catch (secondaryError) {
+          developer.log('All API fallback attempts failed: $secondaryError');
+        }
 
         // If no subscription data was loaded from local storage, initialize it locally
         if (localSubscriptionData == null) {
@@ -489,6 +557,9 @@ class _MyHomePageState extends State<MyHomePage> {
       // Create Expenses object
       var expenses = Expenses.fromJson(storedExpenses);
 
+      // Sort expenses by datetime to ensure newest first
+      expenses.list.sort((a, b) => b.datetime.compareTo(a.datetime));
+
       // Log a sample of the loaded expenses
       final sampleExpenses = expenses.list
           .take(min(3, expenses.list.length))
@@ -503,12 +574,24 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<Expenses> refreshExpenses({bool showLoading = true}) {
+  Future<Expenses> refreshExpenses({bool showLoading = true}) async {
     if (showLoading) {
       expenseStore.loading = true;
     }
-    futureExpenses = fetchExpenses(showLoading: showLoading);
-    return futureExpenses;
+
+    try {
+      futureExpenses = fetchExpenses(showLoading: showLoading);
+      return await futureExpenses;
+    } catch (e) {
+      developer.log('Error in refreshExpenses: ${e.toString()}');
+      // Return the current expenses if the refresh fails
+      return expenseStore.expenses;
+    } finally {
+      // Make sure loading state is cleared even if an error occurs
+      if (expenseStore.loading) {
+        expenseStore.loading = false;
+      }
+    }
   }
 
   Future<void> updateTimeFrame(newFromDate, newToDate) async {
@@ -524,14 +607,15 @@ class _MyHomePageState extends State<MyHomePage> {
     if (userInput is Expense) {
       try {
         // Add the expense to the chat and store
-        chatStore.addAtStart(ExpenseMessage(userInput));
-        expenseStore.add(userInput);
+        chatStore.add(ExpenseMessage(userInput));
+        expenseStore.add(userInput, context: context);
         storeExpensesInStorage(expenseStore.expenses);
+        // Notify for scroll update
+        chatStore.notifyScrollUpdate();
 
         return userInput;
       } catch (e) {
-        chatStore
-            .addAtStart(TextMessage(false, "Error adding manual expense: $e"));
+        chatStore.add(TextMessage(false, "Error adding manual expense: $e"));
         return null;
       }
     }
@@ -540,7 +624,7 @@ class _MyHomePageState extends State<MyHomePage> {
     String userMessage = userInput as String;
 
     if (userMessage == "") {
-      chatStore.addAtStart(TextMessage(
+      chatStore.add(TextMessage(
           false, "Please send a message with details to add expense"));
       return null;
     }
@@ -548,22 +632,25 @@ class _MyHomePageState extends State<MyHomePage> {
     // Check if user can send message
     bool canSend = await _subscriptionService.canSendMessage();
     if (!canSend) {
-      chatStore.addAtStart(TextMessage(false,
+      chatStore.add(TextMessage(false,
           "You've reached your daily message limit. Upgrade to premium for unlimited messages."));
       return null;
     }
 
     try {
-      chatStore.addAtStart(TextMessage(true, userMessage));
-      chatStore.addAtStart(AILoading());
+      chatStore.add(TextMessage(true, userMessage));
+      chatStore.add(AILoading());
       var result = await postExpense(userMessage);
       chatStore.pop();
 
       if (result is Expense) {
         // Add the expense to the UI first
-        chatStore.addAtStart(ExpenseMessage(result));
-        expenseStore.add(result);
+        chatStore.add(ExpenseMessage(result));
+        // Pass the context to update the budget
+        expenseStore.add(result, context: context);
         storeExpensesInStorage(expenseStore.expenses);
+        // Notify for scroll update
+        chatStore.notifyScrollUpdate();
 
         return result;
       } else if (result is Map<String, dynamic> &&
@@ -572,23 +659,30 @@ class _MyHomePageState extends State<MyHomePage> {
         final expense = result['expense'] as Expense;
 
         // Add the expense to the UI
-        chatStore.addAtStart(ExpenseMessage(expense));
-        expenseStore.add(expense);
+        chatStore.add(ExpenseMessage(expense));
+        // Pass the context to update the budget
+        expenseStore.add(expense, context: context);
         storeExpensesInStorage(expenseStore.expenses);
+        // Notify for scroll update
+        chatStore.notifyScrollUpdate();
 
         return expense;
       }
 
       // If we get here, the expense wasn't successfully created
-      chatStore.addAtStart(TextMessage(false, result.toString()));
+      chatStore.add(TextMessage(false, result.toString()));
+      // Notify for scroll update
+      chatStore.notifyScrollUpdate();
       return null;
     } catch (e) {
       developer.log(
         'Error creating expense: ${e.toString()}',
       );
       chatStore.pop();
-      chatStore.addAtStart(TextMessage(
+      chatStore.add(TextMessage(
           false, "Something went wrong while trying to connect to Finget"));
+      // Notify for scroll update
+      chatStore.notifyScrollUpdate();
       return null;
     }
   }
@@ -604,7 +698,11 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove("expenses");
-      await prefs.remove("subscription_data"); // Also clear subscription data
+      await prefs.remove("subscription_data");
+      await prefs.remove("config_data"); // Also clear config data
+
+      // Clear the app init service cache
+      await _appInitService.clearCache();
 
       // Reset the expense store
       expenseStore.setExpenses(Expenses(List.empty()));
@@ -697,21 +795,30 @@ class _MyHomePageState extends State<MyHomePage> {
             Column(
               children: [
                 // Unified budget card combining both date selection and budget info
-                Consumer<ExpenseStore>(
-                  builder: (context, expenseStore, _) {
-                    // Calculate budget percentage if budget has a valid total
+                Consumer<BudgetStore>(
+                  builder: (context, budgetStore, _) {
+                    // Calculate budget percentage
                     double percentUsed = 0.0;
-                    if (expenseStore.budget.total > 0) {
-                      percentUsed = (expenseStore.expenses.total /
-                              expenseStore.budget.total)
-                          .clamp(0.0, 1.0);
+                    double remaining = 0.0;
+                    double total = expenseStore.expenses.total;
+
+                    if (budgetStore.budgetSummary != null) {
+                      // Use the data from the budget summary if available
+                      percentUsed = budgetStore.budgetSummary!.totalBudget > 0
+                          ? (budgetStore.budgetSummary!.totalSpending /
+                                  budgetStore.budgetSummary!.totalBudget)
+                              .clamp(0.0, 1.0)
+                          : 0.0;
+                      remaining = budgetStore.budgetSummary!.remainingBudget;
+                    } else if (budgetStore.budget.total > 0) {
+                      // Fall back to the budget configuration if summary is not available
+                      percentUsed =
+                          (total / budgetStore.budget.total).clamp(0.0, 1.0);
+                      remaining = budgetStore.budget.total - total;
                     }
 
-                    final remaining =
-                        expenseStore.budget.total - expenseStore.expenses.total;
                     final percentDisplay =
                         "${(percentUsed * 100).toStringAsFixed(0)}%";
-                    final total = expenseStore.expenses.total;
 
                     return Container(
                       margin: const EdgeInsets.symmetric(
@@ -755,19 +862,56 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Total spent this month
-                              Text(
-                                fromDate.year == todayDate.year
-                                    ? '${monthFormat.format(fromDate)} month'
-                                    : '${monthAndYearFormat.format(fromDate)} month',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? NeumorphicColors.darkTextSecondary
-                                      : NeumorphicColors.lightTextSecondary,
-                                ),
+                              // Budget month and year with edit button
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    fromDate.year == todayDate.year
+                                        ? '${monthFormat.format(fromDate)} month'
+                                        : '${monthAndYearFormat.format(fromDate)} month',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? NeumorphicColors.darkTextSecondary
+                                          : NeumorphicColors.lightTextSecondary,
+                                    ),
+                                  ),
+
+                                  // Edit budget button
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const BudgetScreen()),
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.1)
+                                            : Colors.black.withOpacity(0.05),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.edit,
+                                        size: 14,
+                                        color: isDark
+                                            ? NeumorphicColors.darkTextSecondary
+                                            : NeumorphicColors
+                                                .lightTextSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 4),
+
+                              // Total spent this month
                               Text(
                                 currencyFormat.format(total),
                                 style: TextStyle(
@@ -865,9 +1009,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? NeumorphicColors.darkAccent
-                                          : NeumorphicColors.lightAccent,
+                                      color: remaining < 0
+                                          ? Colors.red
+                                          : isDark
+                                              ? NeumorphicColors.darkAccent
+                                              : NeumorphicColors.lightAccent,
                                     ),
                                   ),
                                 ],

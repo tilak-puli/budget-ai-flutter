@@ -1,8 +1,11 @@
 import 'package:budget_ai/app.dart';
+import 'package:budget_ai/state/budget_store.dart';
 import 'package:budget_ai/state/chat_store.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/theme/theme_service.dart';
 import 'package:budget_ai/services/subscription_service.dart';
+import 'package:budget_ai/services/initialization_service.dart';
+import 'package:budget_ai/services/app_init_service.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +40,38 @@ Future<void> main() async {
   final subscriptionService = SubscriptionService();
   await subscriptionService.initializeSubscriptions();
 
+  // Initialize app data service
+  final initializationService = InitializationService();
+  final appInitService = AppInitService();
+
+  // Get current month's date range
+  final now = DateTime.now();
+  final firstDayOfMonth = DateTime(now.year, now.month, 1);
+  final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+
+  // Start data prefetch in background with the AppInitService
+  // We don't await this as it's not critical for app startup
+  // and we don't want to delay the app launch
+  appInitService
+      .fetchAppInitData(fromDate: firstDayOfMonth, toDate: lastDayOfMonth)
+      .then((result) {
+    if (result != null) {
+      print('App data initialized successfully using unified API');
+    } else {
+      // If the unified API fails, fall back to the existing implementation
+      initializationService
+          .initializeAppData(fromDate: firstDayOfMonth, toDate: lastDayOfMonth)
+          .then((success) {
+        if (success) {
+          print('App data initialized successfully using fallback method');
+        } else {
+          print(
+              'App data initialization skipped or failed - will try again when needed');
+        }
+      });
+    }
+  });
+
   FirebaseUIAuth.configureProviders([
     GoogleProvider(
         clientId: Platform.isAndroid
@@ -57,9 +92,21 @@ Future<void> main() async {
         ChangeNotifierProvider<ChatStore>(
           create: (context) => ChatStore(),
         ),
+        ChangeNotifierProvider<BudgetStore>(
+          create: (context) => BudgetStore(),
+        ),
+        // Add both services as providers
+        Provider<InitializationService>.value(value: initializationService),
+        Provider<AppInitService>.value(value: appInitService),
       ],
       child: Builder(
         builder: (context) {
+          // Connect ExpenseStore to BudgetStore
+          final expenseStore =
+              Provider.of<ExpenseStore>(context, listen: false);
+          final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+          expenseStore.setBudgetStore(budgetStore);
+
           return MyApp(themeService: themeService);
         },
       ),

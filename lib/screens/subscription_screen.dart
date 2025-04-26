@@ -1,8 +1,10 @@
+import 'package:budget_ai/services/app_init_service.dart';
 import 'package:budget_ai/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:budget_ai/theme/neumorphic_box.dart';
 import 'package:budget_ai/theme/index.dart';
+import 'package:intl/intl.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -13,17 +15,17 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final SubscriptionService _subscriptionService = SubscriptionService();
+  final AppInitService _appInitService = AppInitService();
+  bool _isLoading = true;
+  bool _isRestoring = false;
   bool _isPremium = false;
   int _remainingMessages = 0;
   int _dailyMessageLimit = 5;
-  List<ProductDetails> _products = [];
-  bool _isLoading = true;
-  bool _isRestoring = false;
-
-  // For subscription details
-  String? _expiryDate;
+  DateTime? _lastResetDate;
+  DateTime? _expiryDate;
   bool? _autoRenewing;
-  String? _platform;
+  String? _purchaseToken;
+  List<ProductDetails> _products = [];
 
   // Message quotas
   static const int _freeMessageLimit = 5;
@@ -37,6 +39,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Future<void> _loadSubscriptionData() async {
     try {
+      // Use the app init service to get quota data if available
+      final initData = await _appInitService.fetchAppInitData();
+
+      if (initData != null) {
+        // Get quota from unified API
+        final quota = initData.quota;
+        final isPremium = quota.isPremium;
+        final remainingMessages = quota.remainingQuota;
+        final dailyLimit = quota.dailyLimit;
+
+        // Initialize available products
+        await _subscriptionService.initializeSubscriptions();
+        final products = await _subscriptionService.getAvailableSubscriptions();
+
+        if (mounted) {
+          setState(() {
+            _isPremium = isPremium;
+            _remainingMessages = remainingMessages;
+            _dailyMessageLimit = dailyLimit;
+            _products = products;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Fall back to subscription service if app init data is not available
       // Check current subscription status
       final isPremium = await _subscriptionService.isPremium();
 
@@ -66,7 +95,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         });
       }
     } catch (e) {
-      print('Error loading subscription data from server: $e');
+      print('Error loading subscription data: $e');
 
       // Fall back to local data
       try {
@@ -229,13 +258,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   'Auto-renewing: ${_autoRenewing == true ? 'Yes' : 'No'}',
                                   style: TextStyle(fontSize: 14),
                                 ),
-                                if (_platform != null) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Platform: $_platform',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                ],
                               ],
                             ],
                           ],

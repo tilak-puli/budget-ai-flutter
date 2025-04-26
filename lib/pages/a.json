@@ -1,0 +1,374 @@
+{
+  "expenses": [
+    {
+      "description": "shoes",
+      "amount": 2000,
+      "category": "Shopping",
+      "date": "2025-04-26T17:27:47.000Z",
+      "createdAt": "2025-04-26T17:27:47.000Z",
+      "prompt": "shoes 2000",
+      "_id": "f50d3cd1-be16-4333-9a65-08bcedd939fd",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "books",
+      "amount": 230,
+      "category": "Shopping",
+      "date": "2025-04-26T17:26:05.000Z",
+      "createdAt": "2025-04-26T17:26:05.000Z",
+      "prompt": "books 230",
+      "_id": "6a384364-42bb-40fc-bbee-60adc1666c48",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "videos",
+      "amount": 200,
+      "category": "Entertainment",
+      "date": "2025-04-26T17:24:27.000Z",
+      "createdAt": "2025-04-26T17:24:27.000Z",
+      "prompt": "videos 200",
+      "_id": "e2e14bb2-c1de-4371-8f46-7f571aa7e08c",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Chocolates",
+      "amount": 200,
+      "category": "Groceries",
+      "date": "2025-04-26T17:14:30.000Z",
+      "createdAt": "2025-04-26T17:14:30.000Z",
+      "prompt": "chocoloates 200",
+      "_id": "b1616c38-0044-4a93-b5dc-f9709080ed11",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "mango",
+      "amount": 230,
+      "category": "Groceries",
+      "date": "2025-04-26T17:11:42.000Z",
+      "createdAt": "2025-04-26T17:11:42.000Z",
+      "prompt": "mango 230",
+      "_id": "259bf5de-98d8-4364-81d6-14d8a90191f6",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "ice cream",
+      "amount": 20,
+      "category": "Food",
+      "date": "2025-04-26T17:08:32.000Z",
+      "createdAt": "2025-04-26T17:08:32.000Z",
+      "prompt": "ice cream 20",
+      "_id": "dd766486-ce89-4435-88d6-c6faf0eaf9a5",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "birani",
+      "amount": 200,
+      "category": "Food",
+      "date": "2025-04-26T17:07:47.000Z",
+      "createdAt": "2025-04-26T17:07:47.000Z",
+      "prompt": "birani 200",
+      "_id": "4198686c-a6b8-42be-bf45-8218870056c9",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "books",
+      "amount": 200,
+      "category": "Shopping",
+      "date": "2025-04-26T17:05:30.000Z",
+      "createdAt": "2025-04-26T17:05:30.000Z",
+      "prompt": "books 200",
+      "_id": "c2b2a4dd-cc3e-430d-8086-b42e7240f5ab",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "lunch",
+      "amount": 125,
+      "category": "Food",
+      "date": "2025-04-26T17:03:17.000Z",
+      "createdAt": "2025-04-26T17:03:17.000Z",
+      "prompt": "lunch 125",
+      "_id": "cce7daf5-2a7b-42c4-ae43-85f517f5dee2",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Trip to wine yard",
+      "amount": 3370,
+      "category": "Transport",
+      "date": "2025-04-21T00:14:25.000Z",
+      "createdAt": "2025-04-21T00:14:25.000Z",
+      "prompt": "3370 for trip to wine yard",
+      "_id": "9380450b-84cc-47a4-9f9d-0f5e406e4b4a",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "books",
+      "amount": 200,
+      "category": "Shopping",
+      "date": "2025-04-20T00:57:13.000Z",
+      "createdAt": "2025-04-20T00:57:13.000Z",
+      "prompt": "books 200",
+      "_id": "558c75da-ee9b-4e8d-84d3-c6d1e692ae52",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Biryani",
+      "amount": 120,
+      "category": "Food",
+      "date": "2025-04-20T00:35:45.000Z",
+      "createdAt": "2025-04-20T00:35:45.000Z",
+      "prompt": "biryani 120",
+      "_id": "e41065e8-a5a9-47f1-9109-2b2691f6b519",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Expenses for love",
+      "amount": 2300,
+      "category": "Misc",
+      "date": "2025-04-19T21:47:41.000Z",
+      "createdAt": "2025-04-19T21:47:41.000Z",
+      "prompt": "2300 for love",
+      "_id": "140cdaf2-2502-4c88-9afd-4e8ea052a087",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "face wash and shampoo",
+      "amount": 1038,
+      "category": "Personal Care",
+      "date": "2025-04-18T18:43:55.000Z",
+      "createdAt": "2025-04-18T18:43:55.000Z",
+      "prompt": "1038 face wash and shampoo ",
+      "_id": "85ba927d-507a-4e16-967c-3bf5a31043bb",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Lunch",
+      "amount": 250,
+      "category": "Food",
+      "date": "2025-04-18T18:21:42.000Z",
+      "createdAt": "2025-04-18T18:21:42.000Z",
+      "prompt": "250 lunch ",
+      "_id": "98485a4a-b0cc-48ed-b4b5-40f62682f636",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Auto back from office",
+      "amount": 10.23,
+      "category": "Transport",
+      "date": "2025-04-17T19:04:22.000Z",
+      "createdAt": "2025-04-17T19:04:22.000Z",
+      "prompt": "auto back from office ",
+      "_id": "a5a258bb-51d8-4f9f-ab81-3789058c9d66",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Transportation from home to office",
+      "amount": 150,
+      "category": "Transport",
+      "date": "2025-04-17T10:39:37.000Z",
+      "createdAt": "2025-04-17T10:39:37.000Z",
+      "prompt": "auto to office 150",
+      "_id": "3016e9cd-901b-4664-9b9a-a11a4f40d8dd",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "lunch",
+      "amount": 152,
+      "category": "Food",
+      "date": "2025-04-16T14:13:56.000Z",
+      "createdAt": "2025-04-16T14:13:56.000Z",
+      "prompt": "152 lunch ",
+      "_id": "785edec8-f207-48c1-a16a-8ca91c79ab15",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "295 snacks",
+      "amount": 295,
+      "category": "Groceries",
+      "date": "2025-04-16T10:00:49.000Z",
+      "createdAt": "2025-04-16T10:00:49.000Z",
+      "prompt": "295 snacks for ",
+      "_id": "6eca734e-dcbc-4e45-8fab-09e57a581d3c",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Breakfast",
+      "amount": 50,
+      "category": "Food",
+      "date": "2025-04-16T09:59:14.000Z",
+      "createdAt": "2025-04-16T09:59:14.000Z",
+      "prompt": "50rs breakfast ",
+      "_id": "d34cd547-852b-4d4e-8fed-6e81700a0d01",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Swiggy lunch",
+      "amount": 189,
+      "category": "Food",
+      "date": "2025-04-15T12:42:58.000Z",
+      "createdAt": "2025-04-15T12:42:58.000Z",
+      "prompt": "Swiggy lunch 189",
+      "_id": "8de86935-f37f-44d5-86c0-48c2637af2d8",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Auto to office",
+      "amount": 161,
+      "category": "Transport",
+      "date": "2025-04-15T10:59:10.000Z",
+      "createdAt": "2025-04-15T10:59:10.000Z",
+      "prompt": "161 auto to office ",
+      "_id": "a0816de5-bb0d-45ff-b96a-35e64f7c53ba",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Groceries paid to cook ",
+      "amount": 1000,
+      "category": "Groceries",
+      "date": "2025-04-14T20:42:26.000Z",
+      "createdAt": "2025-04-14T20:42:26.000Z",
+      "prompt": "1000 to cook ",
+      "_id": "ce4bf80c-b871-4828-92af-3c7dbd18d04c",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "Egg bajji",
+      "amount": 30,
+      "category": "Food",
+      "date": "2025-04-14T20:42:03.000Z",
+      "createdAt": "2025-04-14T20:42:03.000Z",
+      "prompt": "egg bajji 30",
+      "_id": "5bda711f-d17d-445d-bbb5-f2223cb16c31",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    },
+    {
+      "description": "rava dosa and mango juice",
+      "amount": 200,
+      "category": "Food",
+      "date": "2025-04-14T10:43:53.000Z",
+      "createdAt": "2025-04-14T10:43:53.000Z",
+      "prompt": "rava dosa and mango juice 200 ",
+      "_id": "e7fdb4bc-e3aa-42ee-8828-82f7fbbe06ca",
+      "userId": "8SJGODcWICSSfcIDf0FlOE7YduK2"
+    }
+  ],
+  "quota": {
+    "hasQuotaLeft": true,
+    "remainingQuota": 1,
+    "isPremium": null,
+    "dailyLimit": 5,
+    "standardLimit": 5,
+    "premiumLimit": 100
+  },
+  "budget": {
+    "budget": {
+      "totalBudget": 25000,
+      "categoryBudgets": {
+        "Transport": 2500,
+        "Rent": 7500,
+        "Entertainment": 1250,
+        "Utilities": 2000,
+        "Groceries": 2500,
+        "Shopping": 1250,
+        "Healthcare": 1250,
+        "Personal Care": 500,
+        "Misc": 500,
+        "Savings": 0,
+        "Lent": 0,
+        "Food": 3000,
+        "Insurance": 1550
+      },
+      "_id": "kzJRYq6bPtz6zzimMJsP"
+    },
+    "categories": [
+      "Food",
+      "Transport",
+      "Rent",
+      "Entertainment",
+      "Utilities",
+      "Groceries",
+      "Shopping",
+      "Healthcare",
+      "Personal Care",
+      "Misc",
+      "Savings",
+      "Insurance",
+      "Lent"
+    ],
+    "budgetExists": true
+  },
+  "budgetSummary": {
+    "totalBudget": 25000,
+    "totalSpending": 12920.23,
+    "remainingBudget": 12079.77,
+    "categories": [
+      { "category": "Food", "budget": 3000, "actual": 1336, "remaining": 1664 },
+      {
+        "category": "Transport",
+        "budget": 2500,
+        "actual": 3691.23,
+        "remaining": -1191.23
+      },
+      { "category": "Rent", "budget": 7500, "actual": 0, "remaining": 7500 },
+      {
+        "category": "Entertainment",
+        "budget": 1250,
+        "actual": 200,
+        "remaining": 1050
+      },
+      {
+        "category": "Utilities",
+        "budget": 2000,
+        "actual": 0,
+        "remaining": 2000
+      },
+      {
+        "category": "Groceries",
+        "budget": 2500,
+        "actual": 1725,
+        "remaining": 775
+      },
+      {
+        "category": "Shopping",
+        "budget": 1250,
+        "actual": 2630,
+        "remaining": -1380
+      },
+      {
+        "category": "Healthcare",
+        "budget": 1250,
+        "actual": 0,
+        "remaining": 1250
+      },
+      {
+        "category": "Personal Care",
+        "budget": 500,
+        "actual": 1038,
+        "remaining": -538
+      },
+      { "category": "Misc", "budget": 500, "actual": 2300, "remaining": -1800 },
+      { "category": "Savings", "budget": 0, "actual": 0, "remaining": 0 },
+      {
+        "category": "Insurance",
+        "budget": 1550,
+        "actual": 0,
+        "remaining": 1550
+      },
+      { "category": "Lent", "budget": 0, "actual": 0, "remaining": 0 }
+    ],
+    "month": 4,
+    "year": 2025,
+    "budgetExists": true
+  },
+  "featureFlags": {
+    "enableBudgetFeature": true,
+    "enableAIExpenses": true,
+    "enableCategoryCustomization": false,
+    "enableDataExport": false,
+    "enableWhatsappIntegration": true
+  },
+  "config": { "DISCORD_URL": "https://discord.gg/DghUAx8387" },
+  "dateRange": {
+    "fromDate": "2025-03-31T18:30:00.000Z",
+    "toDate": "2025-04-30T18:30:00.000Z"
+  }
+}

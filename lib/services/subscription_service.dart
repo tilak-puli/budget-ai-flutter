@@ -356,59 +356,130 @@ class SubscriptionService {
 
   // Modified getMessageQuota to use local cache first
   Future<Map<String, dynamic>> getMessageQuota() async {
-    // Use cached value if available and recent
-    if (_cachedQuotaData != null && _lastQuotaCheck != null) {
-      final difference = DateTime.now().difference(_lastQuotaCheck!);
-      if (difference.inMinutes < 2) {
-        // Cache for 2 minutes
-        return _cachedQuotaData!;
+    try {
+      // First check if we have fresh cache
+      final cachedData = await getCachedQuotaData();
+      if (cachedData != null) {
+        print('Using cached quota data');
+        return cachedData;
       }
-    }
 
-    try {
-      // Get initial quota from local storage
-      final initialQuota = await getInitialQuota();
-
-      // Start fetching from server in background
-      _fetchQuotaFromServer().then((serverQuota) {
-        if (serverQuota != null) {
-          _cachedQuotaData = serverQuota;
-          _lastQuotaCheck = DateTime.now();
-
-          // Update local cache with server data
-          final quota = serverQuota['quota'];
-          if (quota != null) {
-            final remaining = quota['remainingQuota'] as int? ?? 0;
-            final isPremium = quota['isPremium'] as bool? ?? false;
-            updateLocalQuota(remaining, isPremium);
-          }
-        }
-      });
-
-      // Return initial quota immediately
-      return initialQuota;
-    } catch (e) {
-      print('Error getting message quota: $e');
-      // Return initial quota on error
-      return await getInitialQuota();
-    }
-  }
-
-  // Separate method for server quota fetch
-  Future<Map<String, dynamic>?> _fetchQuotaFromServer() async {
-    try {
+      print('Fetching message quota from server...');
       final response = await http.get(
         Uri.parse('$_baseUrl$_messageQuotaEndpoint'),
         headers: await _getAuthHeaders(),
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+
+        // Cache the API response
+        await cacheQuotaData(data);
+
+        // Update the cached remaining count
+        if (data['quota'] != null) {
+          _cachedRemainingCount = data['quota']['remainingQuota'] as int? ?? 0;
+        }
+
+        print('Message quota fetched: $data');
+        return data;
+      } else {
+        print('Failed to fetch message quota: ${response.statusCode}');
+
+        // Fall back to cached data if available, even if expired
+        final expiredCache = await getCachedQuotaData(checkExpiry: false);
+        if (expiredCache != null) {
+          return expiredCache;
+        }
+
+        return {'error': 'Failed to fetch message quota'};
       }
-      print('Error getting message quota from server: ${response.statusCode}');
-      return null;
     } catch (e) {
-      print('Error fetching quota from server: $e');
+      print('Error fetching message quota: $e');
+
+      // Try to use cached data in case of error
+      final expiredCache = await getCachedQuotaData(checkExpiry: false);
+      if (expiredCache != null) {
+        return expiredCache;
+      }
+
+      return {'error': 'Error fetching message quota: $e'};
+    }
+  }
+
+  // Store message quota data in local storage
+  Future<void> cacheQuotaData(Map<String, dynamic> quotaData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = json.encode(quotaData);
+
+      await prefs.setString(_lastQuotaKey, jsonString);
+      await prefs.setString(
+          _lastQuotaDateKey, DateTime.now().toIso8601String());
+
+      // Also update our cached values
+      if (quotaData['quota'] != null) {
+        final quota = quotaData['quota'];
+        _cachedRemainingCount = quota['remainingQuota'] as int? ?? 0;
+        _cachedPremiumStatus = quota['isPremium'] as bool? ?? false;
+        _cachedQuotaData = quotaData;
+        _lastQuotaCheck = DateTime.now();
+      }
+
+      print('Message quota data cached successfully');
+    } catch (e) {
+      print('Error caching quota data: $e');
+    }
+  }
+
+  // Get cached message quota data
+  Future<Map<String, dynamic>?> getCachedQuotaData(
+      {bool checkExpiry = true}) async {
+    try {
+      // If we have cached quota in memory, use that
+      if (_cachedQuotaData != null && _lastQuotaCheck != null) {
+        final cacheAge = DateTime.now().difference(_lastQuotaCheck!);
+
+        // Use in-memory cache if it's fresh (less than 5 minutes old)
+        if (cacheAge < const Duration(minutes: 5)) {
+          print('Using in-memory cached quota data');
+          return _cachedQuotaData;
+        }
+      }
+
+      // Otherwise, try to load from persistent storage
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_lastQuotaKey);
+      final lastDateStr = prefs.getString(_lastQuotaDateKey);
+
+      if (jsonString == null || lastDateStr == null) {
+        return null;
+      }
+
+      // Check if cache is expired (older than 1 hour)
+      if (checkExpiry) {
+        final lastDate = DateTime.parse(lastDateStr);
+        final now = DateTime.now();
+
+        if (now.difference(lastDate) > const Duration(hours: 1)) {
+          print('Quota cache expired');
+          return null;
+        }
+      }
+
+      final data = json.decode(jsonString) as Map<String, dynamic>;
+
+      // Update in-memory cache
+      _cachedQuotaData = data;
+      _lastQuotaCheck = DateTime.now();
+
+      if (data['quota'] != null) {
+        _cachedRemainingCount = data['quota']['remainingQuota'] as int? ?? 0;
+      }
+
+      return data;
+    } catch (e) {
+      print('Error retrieving cached quota: $e');
       return null;
     }
   }
@@ -613,22 +684,5 @@ class SubscriptionService {
     final serialized = jsonEncode(subscriptionData);
     await prefs.setString("subscription_data", serialized);
     print('Stored full subscription data in local storage');
-  }
-
-  // Get cached quota data without making an API call
-  Future<Map<String, dynamic>?> getCachedQuotaData() async {
-    // Check if we have cached data that's recent enough (within last 30 minutes)
-    if (_cachedQuotaData != null && _lastQuotaCheck != null) {
-      final difference = DateTime.now().difference(_lastQuotaCheck!);
-      if (difference.inMinutes < 30) {
-        // Extended cache time
-        print(
-            "Using cached quota data from ${difference.inMinutes} minutes ago");
-        return _cachedQuotaData;
-      }
-    }
-
-    // If no valid cached data, return null
-    return null;
   }
 }

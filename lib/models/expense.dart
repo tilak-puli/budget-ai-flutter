@@ -12,8 +12,6 @@ class Expense {
       this.datetime, this.prompt);
 
   factory Expense.fromJson(dynamic json) {
-    // Print the incoming JSON for debugging
-    print("Expense.fromJson received: $json");
 
     // Handle both direct response and nested response formats
     final Map<String, dynamic> data = json is Map<String, dynamic> ? json : {};
@@ -27,7 +25,6 @@ class Expense {
     if (expenseData['_id'] is Map) {
       // If _id is an object (empty or not), generate a new UUID
       id = const Uuid().v4();
-      print("ID was an object, generated new UUID: $id");
     } else {
       id =
           expenseData['_id']?.toString() ?? expenseData['id']?.toString() ?? '';

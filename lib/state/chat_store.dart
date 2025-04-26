@@ -7,6 +7,11 @@ import 'package:flutter/material.dart';
 class ChatStore extends ChangeNotifier {
   ChatHistory history = ChatHistory();
 
+  // Add this method to force a rebuild when needed
+  void notifyScrollUpdate() {
+    notifyListeners();
+  }
+
   void addMessage(ChatMessage message) {
     history.add(message);
 
@@ -21,6 +26,12 @@ class ChatStore extends ChangeNotifier {
 
   void addAtStart(ChatMessage chatMessage) {
     history.addAtStart(chatMessage);
+
+    notifyListeners();
+  }
+
+  void add(ChatMessage chatMessage) {
+    history.add(chatMessage);
 
     notifyListeners();
   }
@@ -170,7 +181,9 @@ class ChatHistory {
   }
 
   void pop() {
-    messages.removeAt(0);
+    if (messages.isNotEmpty) {
+      messages.removeLast();
+    }
   }
 
   void update(String expenseId, ChatMessage updated) {

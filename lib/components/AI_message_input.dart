@@ -3,9 +3,11 @@ import 'package:budget_ai/components/expense_card.dart';
 import 'package:budget_ai/components/create_expense_form.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/services/subscription_service.dart';
+import 'package:budget_ai/services/initialization_service.dart';
 import 'package:budget_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 class AIMessageInput extends StatefulWidget {
   final Function(dynamic) onAddMessage;
@@ -92,7 +94,28 @@ class _AIMessageInputState extends State<AIMessageInput> {
 
   Future<void> _loadSubscriptionData() async {
     try {
-      // Try to get quota data from server API
+      // First try to use cached data
+      final cachedData = await _subscriptionService.getCachedQuotaData();
+      if (cachedData != null) {
+        final quota = cachedData['quota'];
+        final remainingQuota = quota['remainingQuota'] as int? ?? 0;
+        final dailyLimit = quota['dailyLimit'] as int? ?? _freeMessageLimit;
+        final isPremium = quota['isPremium'] as bool? ?? false;
+
+        if (mounted) {
+          setState(() {
+            _isPremium = isPremium;
+            _remainingMessages = remainingQuota;
+            _dailyLimit = dailyLimit;
+            _isLoading = false;
+          });
+        }
+
+        print(
+            "Using cached quota data: remaining=$_remainingMessages, limit=$_dailyLimit");
+      }
+
+      // Then try to get fresh data from server API
       final isPremium = await _subscriptionService.isPremium();
       final remainingMessages =
           await _subscriptionService.getRemainingMessageCount() ?? 0;
@@ -227,8 +250,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
                         ? NeumorphicColors.darkTextSecondary
                         : NeumorphicColors.lightTextSecondary,
                   ),
-                  onSubmitted: (widget.isDisabled ||
-                          _remainingMessages <= 0 && !_isPremium)
+                  onSubmitted: (widget.isDisabled || _remainingMessages <= 0)
                       ? null
                       : (value) {
                           _onSendPressed();
@@ -328,11 +350,11 @@ class _AIMessageInputState extends State<AIMessageInput> {
                   badgeColor: _getMessageCountColor(),
                   isDisabled: _controller.text.trim().isEmpty ||
                       widget.isDisabled ||
-                      (_remainingMessages <= 0 && !_isPremium),
+                      (_remainingMessages <= 0),
                   onPressed: () {
                     if (!(_controller.text.trim().isEmpty ||
                         widget.isDisabled ||
-                        (_remainingMessages <= 0 && !_isPremium))) {
+                        (_remainingMessages <= 0))) {
                       _onSendPressed();
                     }
                   },

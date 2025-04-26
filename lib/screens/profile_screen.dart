@@ -1,13 +1,18 @@
 import 'package:budget_ai/components/theme_toggle.dart';
+import 'package:budget_ai/screens/budget_screen.dart';
 import 'package:budget_ai/screens/subscription_screen.dart';
 import 'package:budget_ai/services/subscription_service.dart';
+import 'package:budget_ai/services/app_init_service.dart';
 import 'package:budget_ai/theme/index.dart';
+import 'package:budget_ai/constants/config_keys.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 
 class CustomProfileScreen extends StatefulWidget {
   const CustomProfileScreen({super.key});
@@ -18,17 +23,91 @@ class CustomProfileScreen extends StatefulWidget {
 
 class _CustomProfileScreenState extends State<CustomProfileScreen> {
   final SubscriptionService _subscriptionService = SubscriptionService();
+  final AppInitService _appInitService = AppInitService();
   bool _isPremium = false;
   bool _isLoading = true;
+
+  // Default Discord URL as fallback
+  String _discordUrl = 'https://discord.gg/DghUAx8387';
 
   @override
   void initState() {
     super.initState();
     // Get the cached status immediately
     _isPremium = _subscriptionService.getCachedPremiumStatus() ?? false;
-    _isLoading = false;
-    // Then update in background if needed
-    _updateSubscriptionIfNeeded();
+
+    // Initialize data
+    _initData();
+  }
+
+  // Function to get config data from local storage
+  Future<Map<String, dynamic>?> getConfigDataFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedData = prefs.getString("config_data");
+
+      if (storedData == null || storedData.isEmpty) {
+        return null;
+      }
+
+      // Parse the JSON
+      final configData = jsonDecode(storedData) as Map<String, dynamic>;
+      return configData['config'] as Map<String, dynamic>;
+    } catch (e) {
+      print("ERROR RETRIEVING CONFIG DATA: $e");
+      return null;
+    }
+  }
+
+  Future<void> _initData() async {
+    try {
+      // First try to get config from local storage
+      final storedConfig = await getConfigDataFromStorage();
+      if (storedConfig != null &&
+          storedConfig.containsKey(ConfigKeys.discordUrl)) {
+        setState(() {
+          _discordUrl = storedConfig[ConfigKeys.discordUrl] as String;
+          _isLoading = false;
+        });
+        print('Using Discord URL from local storage: $_discordUrl');
+      } else {
+        // If not in local storage, try to get from app init service cached data
+        final initData = _appInitService.cachedData;
+        if (initData != null &&
+            initData.config.containsKey(ConfigKeys.discordUrl)) {
+          setState(() {
+            _discordUrl = initData.config[ConfigKeys.discordUrl] as String;
+            _isLoading = false;
+          });
+          print('Using Discord URL from cached init data: $_discordUrl');
+        } else {
+          // As a last resort, try to get fresh data
+          final freshData = await _appInitService.fetchAppInitData();
+          if (freshData != null &&
+              freshData.config.containsKey(ConfigKeys.discordUrl)) {
+            setState(() {
+              _discordUrl = freshData.config[ConfigKeys.discordUrl] as String;
+              _isLoading = false;
+            });
+            print('Using Discord URL from fresh config: $_discordUrl');
+          } else {
+            // Use default if not available anywhere
+            setState(() {
+              _isLoading = false;
+            });
+            print('Using default Discord URL: $_discordUrl');
+          }
+        }
+      }
+
+      // Update subscription status
+      await _updateSubscriptionIfNeeded();
+    } catch (e) {
+      print('Error initializing profile data: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _updateSubscriptionIfNeeded() async {
@@ -50,7 +129,10 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
       // Clear local storage first
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove("expenses");
-      print("Cleared local expenses");
+      await prefs.remove("subscription_data");
+      await prefs.remove("config_data");
+      await prefs.remove("app_init_data");
+      print("Cleared local storage");
 
       // Clear expense store if available
       if (mounted) {
@@ -128,6 +210,71 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
         ),
       ),
     );
+  }
+
+  // Method to launch Discord URL
+  Future<void> _launchDiscord() async {
+    final Uri url = Uri.parse(_discordUrl);
+
+    print('Attempting to launch Discord URL: $_discordUrl');
+
+    try {
+      // Try basic URL launch with universal option first
+      print('Attempting with universal link mode');
+      bool launched = await launchUrl(url, mode: LaunchMode.platformDefault);
+
+      print('Universal link launch result: $launched');
+
+      if (!launched) {
+        print('URL launch returned false - could not launch');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Could not open Discord community. Please try again later.'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('ERROR launching Discord URL: $e');
+      print('Stack trace: ${StackTrace.current}');
+
+      // Fallback to a more basic approach if we got a platform exception
+      if (e.toString().contains('PlatformException') ||
+          e.toString().contains('channel-error')) {
+        print('Trying fallback with just canLaunchUrl + launchUrl');
+        try {
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url);
+            print('Fallback launch successful');
+          } else {
+            print('canLaunchUrl returned false');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Cannot open Discord. Please try manually visiting $_discordUrl'),
+                ),
+              );
+            }
+          }
+        } catch (fallbackError) {
+          print('Fallback error: $fallbackError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error opening Discord: $fallbackError')),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error opening Discord community: $e')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -297,6 +444,22 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
 
                     const SizedBox(height: 16),
 
+                    // Budget management option
+                    _buildSettingOption(
+                      context: context,
+                      icon: Icons.account_balance_wallet,
+                      title: 'Budget Management',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const BudgetScreen()),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 8),
+
                     // Dark mode toggle
                     _buildSettingOption(
                       context: context,
@@ -329,6 +492,17 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                         title: 'Manage Subscription',
                         onTap: _navigateToSubscription,
                       ),
+
+                    const SizedBox(height: 12),
+
+                    // Discord Support option
+                    _buildSettingOption(
+                      context: context,
+                      icon: Icons.forum,
+                      title: 'Join Discord Community',
+                      onTap: _launchDiscord,
+                      iconColor: const Color(0xFF5865F2), // Discord brand color
+                    ),
 
                     const SizedBox(height: 12),
 

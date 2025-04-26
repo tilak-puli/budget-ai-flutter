@@ -4,8 +4,11 @@ import 'dart:math';
 import 'package:budget_ai/models/budget.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
+import 'package:budget_ai/state/budget_store.dart';
+import 'package:budget_ai/models/app_init_response.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 Future<void> storeExpensesInStorage(Expenses expenses) async {
   try {
@@ -23,11 +26,40 @@ class ExpenseStore extends ChangeNotifier {
   Expenses expenses = Expenses(List.empty());
   bool loading = false;
   Budget budget = Budget();
+  // Reference to BudgetStore for updating budget when expenses change
+  BudgetStore? _budgetStore;
+  // Date range for current expenses
+  DateTime? fromDate;
+  DateTime? toDate;
 
   void setExpenses(Expenses expenses) {
     this.expenses = expenses;
     storeExpensesInStorage(expenses);
 
+    notifyListeners();
+  }
+
+  // Initialize from app init response
+  void initializeFromAppData(AppInitResponse initData) {
+    print("\n------- INITIALIZING EXPENSE STORE FROM APP INIT DATA -------");
+
+    // Update expenses
+    if (initData.expenses.isNotEmpty) {
+      final sortedExpenses = List<Expense>.from(initData.expenses);
+      sortedExpenses.sort((a, b) => b.datetime.compareTo(a.datetime));
+
+      expenses = Expenses(sortedExpenses);
+      storeExpensesInStorage(expenses);
+      print("Initialized ${expenses.list.length} expenses from app init data");
+    }
+
+    // Update date range
+    fromDate = initData.dateRange.fromDate;
+    toDate = initData.dateRange.toDate;
+    print(
+        "Date range set: ${fromDate?.toIso8601String()} to ${toDate?.toIso8601String()}");
+
+    print("------- EXPENSE STORE INITIALIZATION COMPLETE -------\n");
     notifyListeners();
   }
 
@@ -71,40 +103,112 @@ class ExpenseStore extends ChangeNotifier {
     return expenses;
   }
 
-  void deleteExpense(id) {
-    expenses.remove(id);
-    storeExpensesInStorage(expenses);
+  void deleteExpense(id, {BuildContext? context}) {
+    // Find the expense before removing it
+    final expenseIndex = expenses.list.indexWhere((e) => e.id == id);
+
+    if (expenseIndex >= 0) {
+      final expense = expenses.list[expenseIndex];
+
+      // Remove the expense
+      expenses.remove(id);
+      storeExpensesInStorage(expenses);
+
+      // Update budget store if context is provided
+      if (context != null) {
+        final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+        budgetStore.updateBudgetForExpenseChange(
+          expense.amount,
+          expense.category,
+          isAddition: false,
+        );
+      } else if (_budgetStore != null) {
+        _budgetStore!.updateBudgetForExpenseChange(
+          expense.amount,
+          expense.category,
+          isAddition: false,
+        );
+      }
+    }
 
     notifyListeners();
   }
 
-  void updateExpense(String id, Expense expense) {
-    expenses.update(id, expense);
-    storeExpensesInStorage(expenses);
+  void updateExpense(String id, Expense newExpense, {BuildContext? context}) {
+    // Find the old expense before updating
+    final expenseIndex = expenses.list.indexWhere((e) => e.id == id);
+
+    if (expenseIndex >= 0) {
+      final oldExpense = expenses.list[expenseIndex];
+
+      // Update the expense
+      expenses.update(id, newExpense);
+      storeExpensesInStorage(expenses);
+
+      // Update budget store if context is provided
+      if (context != null) {
+        final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+        budgetStore.updateBudgetForExpenseChange(
+            newExpense.amount, newExpense.category,
+            isUpdate: true, oldAmount: oldExpense.amount);
+      } else if (_budgetStore != null) {
+        _budgetStore!.updateBudgetForExpenseChange(
+            newExpense.amount, newExpense.category,
+            isUpdate: true, oldAmount: oldExpense.amount);
+      }
+    }
 
     notifyListeners();
   }
 
   void updateBudgetAmount(String category, num newAmount) {
-    budget.updateAmount(category, newAmount);
+    budget.updateAmount(category, newAmount.toDouble());
 
     notifyListeners();
   }
 
-  void add(Expense expense) {
+  void add(Expense expense, {BuildContext? context}) {
     // First check if expense with this ID already exists
     var existingIndex = expenses.list.indexWhere((e) => e.id == expense.id);
 
     if (existingIndex != -1) {
       // Update existing expense
+      Expense oldExpense = expenses.list[existingIndex];
       expenses.update(expense.id, expense);
+
+      // Update budget store if context is provided
+      if (context != null) {
+        final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+        budgetStore.updateBudgetForExpenseChange(
+            expense.amount, expense.category,
+            isUpdate: true, oldAmount: oldExpense.amount);
+      } else if (_budgetStore != null) {
+        _budgetStore!.updateBudgetForExpenseChange(
+            expense.amount, expense.category,
+            isUpdate: true, oldAmount: oldExpense.amount);
+      }
     } else {
       // Add new expense
       expenses.add(expense);
+
+      // Update budget store if context is provided
+      if (context != null) {
+        final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+        budgetStore.updateBudgetForExpenseChange(
+            expense.amount, expense.category);
+      } else if (_budgetStore != null) {
+        _budgetStore!
+            .updateBudgetForExpenseChange(expense.amount, expense.category);
+      }
     }
 
     storeExpensesInStorage(expenses);
     notifyListeners();
+  }
+
+  // Set the BudgetStore reference
+  void setBudgetStore(BudgetStore budgetStore) {
+    _budgetStore = budgetStore;
   }
 }
 
