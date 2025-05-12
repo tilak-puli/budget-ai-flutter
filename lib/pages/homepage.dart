@@ -3,6 +3,7 @@ import 'package:budget_ai/components/body_tabs.dart';
 import 'package:budget_ai/components/budget_status.dart';
 import 'package:budget_ai/components/leading_actions.dart';
 import 'package:budget_ai/components/neumorphic_app_bar.dart';
+import 'package:budget_ai/components/common_app_bar.dart';
 import 'package:budget_ai/models/expense.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:budget_ai/screens/subscription_screen.dart';
@@ -24,6 +25,7 @@ import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:budget_ai/services/app_init_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 var todayDate = DateTime.now();
 
@@ -260,10 +262,43 @@ class _MyHomePageState extends State<MyHomePage> {
       date = toDate;
     }
 
+    // Fetch live location
+    double? latitude;
+    double? longitude;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final bool locationDenied =
+          prefs.getBool('location_permission_denied') ?? false;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (!locationDenied && permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // User denied permission, store flag so we don't ask again
+          await prefs.setBool('location_permission_denied', true);
+        }
+      }
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high);
+        latitude = position.latitude;
+        longitude = position.longitude;
+      } else {
+        // Permission denied or restricted, do not fetch or send location
+        latitude = null;
+        longitude = null;
+      }
+    } catch (e) {
+      print('Could not fetch location: $e');
+      latitude = null;
+      longitude = null;
+    }
+
     Response response;
 
     try {
-      response = await ApiService().addExpense(userMessage, date);
+      response = await ApiService().addExpense(userMessage, date,
+          latitude: latitude, longitude: longitude);
     } catch (e) {
       return Exception("Something went wrong while connecting to server");
     }
@@ -736,23 +771,20 @@ class _MyHomePageState extends State<MyHomePage> {
         : NeumorphicColors.lightPrimaryBackground;
 
     return Scaffold(
-      appBar: NeumorphicAppBar(
+      appBar: CommonAppBar(
         title: widget.title,
-        useAccentColor: true, // Use the blue background
-        showShadow: false, // No shadow for clean look
-        elevation: 0,
-        leading: LeadingActions(fromDate, toDate,
-            updateTimeFrame), // Month selector back in app bar
+        leading: LeadingActions(fromDate, toDate, updateTimeFrame),
+        automaticallyImplyLeading: false,
         actions: [
           CircleAvatar(
             radius: 18,
             backgroundColor: isDark
-                ? NeumorphicColors.darkAccent.withOpacity(0.3)
-                : Colors.white.withOpacity(0.2),
+                ? Colors.white.withOpacity(0.15)
+                : Colors.white.withOpacity(0.25),
             child: IconButton(
               icon: Icon(
                 Icons.diamond_outlined,
-                color: isDark ? NeumorphicColors.darkAccent : Colors.white,
+                color: Colors.white,
                 size: 18,
               ),
               onPressed: _showSubscriptionDialog,
@@ -764,12 +796,12 @@ class _MyHomePageState extends State<MyHomePage> {
           CircleAvatar(
             radius: 18,
             backgroundColor: isDark
-                ? NeumorphicColors.darkAccent.withOpacity(0.3)
-                : Colors.white.withOpacity(0.2),
+                ? Colors.white.withOpacity(0.15)
+                : Colors.white.withOpacity(0.25),
             child: IconButton(
               icon: Icon(
                 Icons.person,
-                color: isDark ? NeumorphicColors.darkAccent : Colors.white,
+                color: Colors.white,
                 size: 18,
               ),
               onPressed: () {
@@ -800,7 +832,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     // Calculate budget percentage
                     double percentUsed = 0.0;
                     double remaining = 0.0;
-                    double total = expenseStore.expenses.total;
+                    double total = expenseStore.expenses.total.toDouble();
 
                     if (budgetStore.budgetSummary != null) {
                       // Use the data from the budget summary if available

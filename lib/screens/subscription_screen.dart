@@ -5,6 +5,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:budget_ai/theme/neumorphic_box.dart';
 import 'package:budget_ai/theme/index.dart';
 import 'package:intl/intl.dart';
+import 'package:budget_ai/components/common_app_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -173,10 +174,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Premium Subscription'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      appBar: CommonAppBar(
+        title: 'Premium Subscription',
         actions: [
           if (_isRestoring)
             const Center(

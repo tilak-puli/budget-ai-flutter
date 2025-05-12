@@ -12,7 +12,9 @@ import 'package:provider/provider.dart';
 import 'package:budget_ai/state/expense_store.dart';
 import 'package:budget_ai/models/expense_list.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:budget_ai/components/common_app_bar.dart';
 import 'dart:convert';
+import 'package:budget_ai/screens/contact_us_screen.dart';
 
 class CustomProfileScreen extends StatefulWidget {
   const CustomProfileScreen({super.key});
@@ -287,14 +289,8 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
         : NeumorphicColors.lightPrimaryBackground;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: backgroundColor,
-        iconTheme: IconThemeData(
-          color: isDark
-              ? NeumorphicColors.darkTextPrimary
-              : NeumorphicColors.lightTextPrimary,
-        ),
+      appBar: CommonAppBar(
+        title: 'Profile',
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -502,6 +498,24 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                       title: 'Join Discord Community',
                       onTap: _launchDiscord,
                       iconColor: const Color(0xFF5865F2), // Discord brand color
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Contact Us option
+                    _buildSettingOption(
+                      context: context,
+                      icon: Icons.email,
+                      title: 'Contact Us',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ContactUsScreen(),
+                          ),
+                        );
+                      },
+                      iconColor: Theme.of(context).colorScheme.primary,
                     ),
 
                     const SizedBox(height: 12),

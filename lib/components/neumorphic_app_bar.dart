@@ -88,21 +88,21 @@ class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: backgroundColor,
       elevation: showShadow ? elevation : 0,
       scrolledUnderElevation: showShadow ? elevation : 0,
-      leading: leading != null
-          ? Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: leading,
-            )
-          : null,
-      leadingWidth: 140, // Give more space for month selector
+      automaticallyImplyLeading: false,
+      leading: leading,
+      leadingWidth: 120,
       actions: actions,
       centerTitle: true,
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
+      titleSpacing: 0,
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
       ),
       bottom: bottom != null
           ? PreferredSize(
@@ -110,13 +110,9 @@ class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: bottom!,
             )
           : null,
-      shape: showShadow
-          ? null
-          : const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(16),
-              ),
-            ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero,
+      ),
     );
   }
 

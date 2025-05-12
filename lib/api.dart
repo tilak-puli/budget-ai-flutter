@@ -74,12 +74,15 @@ class ApiService {
     return _makeRequest('GET', uri, headers, null, 'FETCH_EXPENSES');
   }
 
-  Future<http.Response> addExpense(userMessage, date) async {
+  Future<http.Response> addExpense(userMessage, date,
+      {double? latitude, double? longitude}) async {
     final uri = URI(host, '$URL_PREFIX/ai/expense');
     final headers = await getHeaders();
-    final body = json.encode(<String, String>{
+    final body = json.encode(<String, dynamic>{
       "userMessage": userMessage,
-      "date": date != null ? date.toString() : ""
+      "date": date != null ? date.toString() : "",
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     });
 
     return _makeRequest('POST', uri, headers, body, 'AI_ADD_EXPENSE');
@@ -112,11 +115,25 @@ class ApiService {
         "category": expense.category,
         "date": expense.datetime.toUtc().toIso8601String(),
         "description": expense.description,
-        "amount": expense.amount
+        "amount": expense.amount,
+        if (expense.latitude != null) 'latitude': expense.latitude,
+        if (expense.longitude != null) 'longitude': expense.longitude,
       }
     });
 
     return _makeRequest(
         'POST', uri, headers, requestBody, 'MANUAL_CREATE_EXPENSE');
+  }
+
+  // Method to report an AI-generated expense as incorrect
+  Future<http.Response> reportAIExpense(Expense expense,
+      {String? message}) async {
+    final uri = URI(host, '$URL_PREFIX/report-ai-expense');
+    final headers = await getHeaders();
+    final body = json.encode({
+      "expense": expense.toJson(),
+      if (message != null && message.isNotEmpty) "message": message,
+    });
+    return _makeRequest('POST', uri, headers, body, 'REPORT_AI_EXPENSE');
   }
 }

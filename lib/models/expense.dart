@@ -7,12 +7,14 @@ class Expense {
   final String description;
   final String id;
   final String? prompt;
+  final double? latitude;
+  final double? longitude;
 
   const Expense(this.id, this.amount, this.category, this.description,
-      this.datetime, this.prompt);
+      this.datetime, this.prompt,
+      {this.latitude, this.longitude});
 
   factory Expense.fromJson(dynamic json) {
-
     // Handle both direct response and nested response formats
     final Map<String, dynamic> data = json is Map<String, dynamic> ? json : {};
 
@@ -21,7 +23,7 @@ class Expense {
         data.containsKey('expense') ? data['expense'] : data;
 
     // Get ID - handle different field names
-    String id; 
+    String id;
     if (expenseData['_id'] is Map) {
       // If _id is an object (empty or not), generate a new UUID
       id = const Uuid().v4();
@@ -47,7 +49,12 @@ class Expense {
     // Get prompt or use default
     final String prompt = expenseData['prompt'] as String? ?? "Manually added";
 
-    return Expense(id, amount, category, description, date, prompt);
+    // Get latitude and longitude if present
+    final double? latitude = (expenseData['latitude'] as num?)?.toDouble();
+    final double? longitude = (expenseData['longitude'] as num?)?.toDouble();
+
+    return Expense(id, amount, category, description, date, prompt,
+        latitude: latitude, longitude: longitude);
   }
 
   toJson() => {
@@ -56,6 +63,8 @@ class Expense {
         "description": description,
         "category": category,
         'date': datetime.toUtc().toIso8601String(),
-        "prompt": prompt
+        "prompt": prompt,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       };
 }

@@ -6,6 +6,7 @@ import 'package:budget_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreateExpenseForm extends StatefulWidget {
   final Function(Expense) onExpenseCreated;
@@ -55,6 +56,25 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
         // Generate a temporary ID
         final tempId = const Uuid().v4();
 
+        // Fetch live location
+        double? latitude;
+        double? longitude;
+        try {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            permission = await Geolocator.requestPermission();
+          }
+          if (permission == LocationPermission.whileInUse ||
+              permission == LocationPermission.always) {
+            final position = await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.high);
+            latitude = position.latitude;
+            longitude = position.longitude;
+          }
+        } catch (e) {
+          print('Could not fetch location: $e');
+        }
+
         // Create a temp expense object
         final expense = Expense(
           tempId,
@@ -63,6 +83,8 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
           _description,
           _date,
           "Manually added", // Use a prompt that indicates manual creation
+          latitude: latitude,
+          longitude: longitude,
         );
 
         // Call the API

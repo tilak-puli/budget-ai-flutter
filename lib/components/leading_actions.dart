@@ -41,7 +41,8 @@ class LeadingActions extends StatelessWidget {
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
     return Container(
-      constraints: BoxConstraints(maxWidth: 130), // Prevent overflow
+      constraints: const BoxConstraints(
+          minWidth: 100, maxWidth: 150), // Dynamic constraints for flexibility
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -52,7 +53,7 @@ class LeadingActions extends StatelessWidget {
               context: context,
               builder: (BuildContext context) {
                 return Dialog(
-                  backgroundColor: Colors.white,
+                  backgroundColor: isDark ? Color(0xFF303030) : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -69,24 +70,25 @@ class LeadingActions extends StatelessWidget {
             }
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
                   child: Text(
                     displayText,
-                    style: TextStyle(
-                      color: textColor,
+                    style: const TextStyle(
+                      color: Colors.white, // Always white on app bar
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_drop_down,
-                  color: textColor,
+                  color: Colors.white, // Always white on app bar
                 ),
               ],
             ),
