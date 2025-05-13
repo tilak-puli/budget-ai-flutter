@@ -28,6 +28,7 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
   final AppInitService _appInitService = AppInitService();
   bool _isPremium = false;
   bool _isLoading = true;
+  bool _autoExpenseBetaEnabled = false;
 
   // Default Discord URL as fallback
   String _discordUrl = 'https://discord.gg/DghUAx8387';
@@ -37,9 +38,17 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
     super.initState();
     // Get the cached status immediately
     _isPremium = _subscriptionService.getCachedPremiumStatus() ?? false;
-
+    _loadAutoExpenseBetaEnabled();
     // Initialize data
     _initData();
+  }
+
+  Future<void> _loadAutoExpenseBetaEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _autoExpenseBetaEnabled =
+          prefs.getBool('auto_expense_beta_enabled') ?? false;
+    });
   }
 
   // Function to get config data from local storage
@@ -469,6 +478,46 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                     ),
 
                     const SizedBox(height: 12),
+
+                    // Beta: Auto-create expenses from notifications toggle
+                    _buildSettingOption(
+                      context: context,
+                      icon: Icons.notifications_active_outlined,
+                      title:
+                          'Auto-create expenses from UPI/credit card notifications (Beta)',
+                      onTap: () {},
+                      trailing: Switch(
+                        value: _autoExpenseBetaEnabled,
+                        onChanged: (value) async {
+                          setState(() {
+                            _autoExpenseBetaEnabled = value;
+                          });
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setBool(
+                              'auto_expense_beta_enabled', value);
+                          if (value && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Beta feature enabled: The app will detect UPI/credit card payments from notifications and SMS.'),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          left: 56.0, right: 8.0, top: 2.0, bottom: 12.0),
+                      child: Text(
+                        'Detects payments from Google Pay, PhonePe, and Paytm notifications and SMS. Asks for confirmation before creating an expense.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: isDark
+                                  ? NeumorphicColors.darkTextSecondary
+                                  : NeumorphicColors.lightTextSecondary,
+                            ),
+                      ),
+                    ),
 
                     // Upgrade to Premium option for free users
                     if (!_isPremium)

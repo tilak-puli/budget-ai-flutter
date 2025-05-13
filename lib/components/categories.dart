@@ -77,7 +77,7 @@ class _CategoriesState extends State<Categories>
 
     if (widget.expenses.isEmpty) {
       return const Center(
-                child: Text("No transactions recorded this month"),
+        child: Text("No transactions recorded this month"),
       );
     }
 
@@ -210,10 +210,10 @@ class _CategoriesState extends State<Categories>
                 ),
                 series: <CircularSeries>[
                   // Render pie chart with smooth animation
-                    PieSeries<ChartData, String>(
-                        dataSource: chartData,
-                        xValueMapper: (ChartData data, _) => data.x,
-                        yValueMapper: (ChartData data, _) => data.y,
+                  PieSeries<ChartData, String>(
+                    dataSource: chartData,
+                    xValueMapper: (ChartData data, _) => data.x,
+                    yValueMapper: (ChartData data, _) => data.y,
                     pointColorMapper: (ChartData data, _) => data.color,
                     dataLabelSettings: DataLabelSettings(
                       isVisible: true,
@@ -424,7 +424,7 @@ class _CategoriesState extends State<Categories>
                     majorTickLines: const MajorTickLines(size: 0),
                   ),
                   tooltipBehavior: TooltipBehavior(enable: true),
-                  series: <ChartSeries>[
+                  series: <CartesianSeries<TimeSeriesData, DateTime>>[
                     SplineAreaSeries<TimeSeriesData, DateTime>(
                       dataSource: timeSeriesData,
                       xValueMapper: (TimeSeriesData data, _) => data.date,

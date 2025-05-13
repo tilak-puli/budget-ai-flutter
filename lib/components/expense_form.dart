@@ -3,6 +3,8 @@ import 'package:budget_ai/theme/index.dart';
 import 'package:budget_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:budget_ai/state/budget_store.dart';
 
 class ExpenseForm extends StatefulWidget {
   final Expense expense;
@@ -63,6 +65,12 @@ class ExpenseFormState extends State<ExpenseForm> {
         isDark ? Colors.grey.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
     final fillColor =
         isDark ? Colors.grey.withOpacity(0.08) : Colors.grey.withOpacity(0.05);
+
+    // Get categories from BudgetStore
+    final budgetCategories =
+        Provider.of<BudgetStore>(context, listen: false).categories;
+    final allCategories = Set<String>.from(budgetCategories)
+      ..add(widget.expense.category);
 
     // Define consistent text styles
     final labelTextStyle = TextStyle(
@@ -198,8 +206,7 @@ class ExpenseFormState extends State<ExpenseForm> {
                 : NeumorphicColors.lightCardBackground,
             isExpanded: true,
             value: widget.expense.category,
-            items: [widget.expense.category]
-                .map<DropdownMenuItem<String>>((String value) {
+            items: allCategories.map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
                 value: value,
                 child: Text(value),
