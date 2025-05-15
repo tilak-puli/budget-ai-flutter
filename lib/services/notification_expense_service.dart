@@ -6,6 +6,7 @@ import 'package:notification_listener_service/notification_event.dart';
 import 'package:notification_listener_service/notification_listener_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// This service is currently disabled. All methods are no-op.
 class NotificationExpenseService {
   static final NotificationExpenseService _instance =
       NotificationExpenseService._internal();
@@ -24,54 +25,21 @@ class NotificationExpenseService {
   StreamSubscription<ServiceNotificationEvent>? _notificationSub;
   bool _initialized = false;
 
+  /// Initialize the service (currently disabled)
   Future<void> initialize(BuildContext context) async {
-    if (_initialized || !Platform.isAndroid) return;
+    if (_initialized) return;
     _initialized = true;
-
-    // Request permissions
-    await _requestPermissions();
-
-    // Initialize local notifications (latest API)
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    final InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // TODO: Handle notification tap for confirmation
-      },
-    );
-
-    // Listen to notifications from UPI apps
-    _notificationSub = NotificationListenerService.notificationsStream.listen((
-      event,
-    ) {
-      if (event.packageName != null &&
-          upiAppPackages.contains(event.packageName)) {
-        final text = event.content ?? '';
-        if (_isPaymentNotification(text)) {
-          final parsed = _parsePaymentDetails(text);
-          if (parsed != null) {
-            _showConfirmationNotification(
-              parsed['amount'],
-              parsed['merchant'],
-              context,
-            );
-          }
-        }
-      }
-    });
+    // Service is disabled
   }
 
+  /// Request permissions (currently disabled)
   Future<void> _requestPermissions() async {
-    // Request notification listener permission
-    final granted = await NotificationListenerService.isPermissionGranted();
-    if (!granted) {
-      await NotificationListenerService.requestPermission();
-    }
-    // Optionally request notification permission for local notifications
-    await [Permission.notification].request();
+    // Service is disabled
+  }
+
+  /// Dispose of any resources (currently disabled)
+  void dispose() {
+    // Service is disabled
   }
 
   bool _isPaymentNotification(String text) {
@@ -120,9 +88,5 @@ class NotificationExpenseService {
       payload: 'create_expense',
     );
     // TODO: On tap, show confirmation dialog in app and call API if confirmed
-  }
-
-  void dispose() {
-    _notificationSub?.cancel();
   }
 }
