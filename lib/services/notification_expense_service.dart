@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_notification_listener/flutter_notification_listener.dart';
-import 'package:telephony/telephony.dart';
+import 'package:notification_listener_service/notification_event.dart';
+import 'package:notification_listener_service/notification_listener_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class NotificationExpenseService {
@@ -20,12 +19,9 @@ class NotificationExpenseService {
     'net.one97.paytm', // Paytm
   ];
 
-  final Telephony _telephony = Telephony.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  StreamSubscription<dynamic>? _notificationSub;
-  StreamSubscription<SmsMessage>? _smsSub;
-
+  StreamSubscription<ServiceNotificationEvent>? _notificationSub;
   bool _initialized = false;
 
   Future<void> initialize(BuildContext context) async {
@@ -39,9 +35,7 @@ class NotificationExpenseService {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
+        InitializationSettings(android: initializationSettingsAndroid);
     await _localNotifications.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
@@ -50,58 +44,37 @@ class NotificationExpenseService {
     );
 
     // Listen to notifications from UPI apps
-    _notificationSub = NotificationListener.receivePort.listen((event) {
-      if (event is ReceivedNotificationEvent) {
-        if (upiAppPackages.contains(event.packageName)) {
-          _handleUpiNotification(event, context);
+    _notificationSub = NotificationListenerService.notificationsStream.listen((
+      event,
+    ) {
+      if (event.packageName != null &&
+          upiAppPackages.contains(event.packageName)) {
+        final text = event.content ?? '';
+        if (_isPaymentNotification(text)) {
+          final parsed = _parsePaymentDetails(text);
+          if (parsed != null) {
+            _showConfirmationNotification(
+              parsed['amount'],
+              parsed['merchant'],
+              context,
+            );
+          }
         }
       }
     });
-    await NotificationListener.startService();
-
-    // Listen to SMS
-    _smsSub = _telephony.listenIncomingSms(
-      onNewMessage: (SmsMessage message) {
-        _handleSms(message, context);
-      },
-      onBackgroundMessage: null, // TODO: Add background handler if needed
-    );
   }
 
   Future<void> _requestPermissions() async {
-    await [
-      Permission.notification,
-      Permission.sms,
-      // Permission.receiveSms, // Not needed for permission_handler >= 10.2.0
-      // Permission.readSms,    // Not needed for permission_handler >= 10.2.0
-    ].request();
-  }
-
-  void _handleUpiNotification(
-      ReceivedNotificationEvent event, BuildContext context) {
-    final String? text = event.text;
-    if (text != null && _isPaymentNotification(text)) {
-      final parsed = _parsePaymentDetails(text);
-      if (parsed != null) {
-        _showConfirmationNotification(
-            parsed['amount'], parsed['merchant'], context);
-      }
+    // Request notification listener permission
+    final granted = await NotificationListenerService.isPermissionGranted();
+    if (!granted) {
+      await NotificationListenerService.requestPermission();
     }
-  }
-
-  void _handleSms(SmsMessage message, BuildContext context) {
-    final String? body = message.body;
-    if (body != null && _isPaymentNotification(body)) {
-      final parsed = _parsePaymentDetails(body);
-      if (parsed != null) {
-        _showConfirmationNotification(
-            parsed['amount'], parsed['merchant'], context);
-      }
-    }
+    // Optionally request notification permission for local notifications
+    await [Permission.notification].request();
   }
 
   bool _isPaymentNotification(String text) {
-    // TODO: Improve regex/logic for payment detection
     final lower = text.toLowerCase();
     return lower.contains('debited') ||
         lower.contains('credited') ||
@@ -110,7 +83,6 @@ class NotificationExpenseService {
   }
 
   Map<String, dynamic>? _parsePaymentDetails(String text) {
-    // TODO: Use regex to extract amount, merchant, etc.
     final amountRegex = RegExp(r'(?:Rs\.?|INR|₹)\s?(\d+[,.]?\d*)');
     final match = amountRegex.firstMatch(text);
     if (match != null) {
@@ -124,18 +96,21 @@ class NotificationExpenseService {
   }
 
   Future<void> _showConfirmationNotification(
-      String? amount, String? merchant, BuildContext context) async {
-    // Use the latest API for notification details
+    String? amount,
+    String? merchant,
+    BuildContext context,
+  ) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'auto_expense_channel',
-      'Auto Expense Detection',
-      channelDescription: 'Detects payments and suggests creating expenses',
-      importance: Importance.max,
-      priority: Priority.high,
+          'auto_expense_channel',
+          'Auto Expense Detection',
+          channelDescription: 'Detects payments and suggests creating expenses',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
     );
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await _localNotifications.show(
       1001,
@@ -149,6 +124,5 @@ class NotificationExpenseService {
 
   void dispose() {
     _notificationSub?.cancel();
-    _smsSub?.cancel();
   }
 }
