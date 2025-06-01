@@ -1,6 +1,6 @@
-import 'package:budget_ai/models/budget.dart';
-import 'package:budget_ai/services/budget_service.dart';
-import 'package:budget_ai/models/app_init_response.dart' as init_api;
+import 'package:coin_master_ai/models/budget.dart';
+import 'package:coin_master_ai/services/budget_service.dart';
+import 'package:coin_master_ai/models/app_init_response.dart' as init_api;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -43,8 +43,11 @@ Future<Map<String, dynamic>?> getBudgetDataFromStorage() async {
 }
 
 // Store budget summary in local storage
-Future<void> storeBudgetSummaryInStorage(Map<String, dynamic> summaryData,
-    {int? month, int? year}) async {
+Future<void> storeBudgetSummaryInStorage(
+  Map<String, dynamic> summaryData, {
+  int? month,
+  int? year,
+}) async {
   try {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = json.encode(summaryData);
@@ -62,8 +65,10 @@ Future<void> storeBudgetSummaryInStorage(Map<String, dynamic> summaryData,
 }
 
 // Get budget summary from local storage
-Future<Map<String, dynamic>?> getBudgetSummaryFromStorage(
-    {int? month, int? year}) async {
+Future<Map<String, dynamic>?> getBudgetSummaryFromStorage({
+  int? month,
+  int? year,
+}) async {
   try {
     final prefs = await SharedPreferences.getInstance();
     final key = _createSummaryKey(month, year);
@@ -119,43 +124,51 @@ class BudgetStore with ChangeNotifier {
 
   // Initialize from app init response
   void initializeFromAppData(init_api.AppInitResponse initData) {
-    developer
-        .log("\n------- INITIALIZING BUDGET STORE FROM APP INIT DATA -------");
+    developer.log(
+      "\n------- INITIALIZING BUDGET STORE FROM APP INIT DATA -------",
+    );
 
     try {
       // Update budget
       if (initData.budget.budgetExists && initData.budget.budget != null) {
         _budget = initData.budget.budget!;
-        developer
-            .log("Budget initialized from app init data, ID: ${_budget.id}");
+        developer.log(
+          "Budget initialized from app init data, ID: ${_budget.id}",
+        );
       }
 
       // Update categories
       _categories = initData.budget.categories;
       developer.log(
-          "Categories updated from app init data: ${_categories.join(', ')}");
+        "Categories updated from app init data: ${_categories.join(', ')}",
+      );
 
       // Update budget summary
       if (initData.budgetSummary.budgetExists) {
         final initSummary = initData.budgetSummary;
 
         // Convert category summaries from API format to app format
-        final categoryData = initSummary.categories
-            .map((cat) => CategorySummary(
-                category: cat.category,
-                budget: cat.budget,
-                actual: cat.actual,
-                remaining: cat.remaining))
-            .toList();
+        final categoryData =
+            initSummary.categories
+                .map(
+                  (cat) => CategorySummary(
+                    category: cat.category,
+                    budget: cat.budget,
+                    actual: cat.actual,
+                    remaining: cat.remaining,
+                  ),
+                )
+                .toList();
 
         // Create BudgetSummary instance from our models
         _budgetSummary = BudgetSummary(
-            totalBudget: initSummary.totalBudget,
-            totalSpending: initSummary.totalSpending,
-            remainingBudget: initSummary.remainingBudget,
-            categories: categoryData,
-            month: initSummary.month,
-            year: initSummary.year);
+          totalBudget: initSummary.totalBudget,
+          totalSpending: initSummary.totalSpending,
+          remainingBudget: initSummary.remainingBudget,
+          categories: categoryData,
+          month: initSummary.month,
+          year: initSummary.year,
+        );
 
         developer.log("Budget summary initialized from app init data");
       }
@@ -256,8 +269,9 @@ class BudgetStore with ChangeNotifier {
         await storeBudgetDataInStorage(budgetData);
 
         _hasCachedData = true;
-        developer
-            .log('Budget data updated from API and stored in local storage');
+        developer.log(
+          'Budget data updated from API and stored in local storage',
+        );
 
         // Clear any previous errors
         _error = null;
@@ -277,8 +291,10 @@ class BudgetStore with ChangeNotifier {
 
     try {
       // First check if summary is in local storage
-      final cachedSummary =
-          await getBudgetSummaryFromStorage(month: month, year: year);
+      final cachedSummary = await getBudgetSummaryFromStorage(
+        month: month,
+        year: year,
+      );
 
       if (cachedSummary != null && cachedSummary['success'] == true) {
         _budgetSummary = BudgetSummary.fromJson(cachedSummary);
@@ -286,15 +302,20 @@ class BudgetStore with ChangeNotifier {
       }
 
       // Fetch fresh data from API
-      final summaryData =
-          await _budgetService.getBudgetSummary(month: month, year: year);
+      final summaryData = await _budgetService.getBudgetSummary(
+        month: month,
+        year: year,
+      );
 
       if (summaryData['success'] == true) {
         _budgetSummary = BudgetSummary.fromJson(summaryData);
 
         // Store the API response in local storage
-        await storeBudgetSummaryInStorage(summaryData,
-            month: month, year: year);
+        await storeBudgetSummaryInStorage(
+          summaryData,
+          month: month,
+          year: year,
+        );
 
         _error = null;
       } else {
@@ -311,17 +332,21 @@ class BudgetStore with ChangeNotifier {
       // Try loading from cache if API fails
       if (_budgetSummary == null) {
         try {
-          final cachedSummary =
-              await getBudgetSummaryFromStorage(month: month, year: year);
+          final cachedSummary = await getBudgetSummaryFromStorage(
+            month: month,
+            year: year,
+          );
 
           if (cachedSummary != null && cachedSummary['success'] == true) {
             _budgetSummary = BudgetSummary.fromJson(cachedSummary);
             developer.log(
-                'Budget summary loaded from local storage after API failure');
+              'Budget summary loaded from local storage after API failure',
+            );
           }
         } catch (cacheError) {
-          developer
-              .log('Failed to load summary from local storage: $cacheError');
+          developer.log(
+            'Failed to load summary from local storage: $cacheError',
+          );
         }
       }
     } finally {
@@ -363,7 +388,9 @@ class BudgetStore with ChangeNotifier {
 
   // Set category budget with optimistic update
   Future<void> setCategoryBudgetOptimistic(
-      String category, double amount) async {
+    String category,
+    double amount,
+  ) async {
     // First update the budget in memory for immediate UI feedback
     final updatedBudget = Budget(
       id: _budget.id,
@@ -418,41 +445,49 @@ class BudgetStore with ChangeNotifier {
 
   // Helper method to update budget summary when a category budget changes
   void _updateSummaryForCategoryBudgetChange(
-      String category, double oldAmount, double newAmount) {
+    String category,
+    double oldAmount,
+    double newAmount,
+  ) {
     // Skip if we don't have a budget summary
     if (_budgetSummary == null) return;
 
     // Create updated category list
     List<CategorySummary> updatedCategories =
         _budgetSummary!.categories.map((cat) {
-      // If this is the affected category, update it
-      if (cat.category.toLowerCase() == category.toLowerCase()) {
-        // Calculate new remaining amount based on the updated budget
-        double newRemaining = newAmount - cat.actual;
+          // If this is the affected category, update it
+          if (cat.category.toLowerCase() == category.toLowerCase()) {
+            // Calculate new remaining amount based on the updated budget
+            double newRemaining = newAmount - cat.actual;
 
-        // Return updated category
-        return CategorySummary(
-            category: cat.category,
-            budget: newAmount,
-            actual: cat.actual,
-            remaining: newRemaining);
-      }
+            // Return updated category
+            return CategorySummary(
+              category: cat.category,
+              budget: newAmount,
+              actual: cat.actual,
+              remaining: newRemaining,
+            );
+          }
 
-      // Return unchanged category
-      return cat;
-    }).toList();
+          // Return unchanged category
+          return cat;
+        }).toList();
 
     // Check if we need to add a new category that wasn't in the summary
-    bool categoryExists = updatedCategories
-        .any((cat) => cat.category.toLowerCase() == category.toLowerCase());
+    bool categoryExists = updatedCategories.any(
+      (cat) => cat.category.toLowerCase() == category.toLowerCase(),
+    );
 
     if (!categoryExists) {
       // Add new category to the summary with 0 actual spending
-      updatedCategories.add(CategorySummary(
+      updatedCategories.add(
+        CategorySummary(
           category: category,
           budget: newAmount,
           actual: 0,
-          remaining: newAmount));
+          remaining: newAmount,
+        ),
+      );
     }
 
     // Calculate the change in total budget (could be positive or negative)
@@ -464,34 +499,42 @@ class BudgetStore with ChangeNotifier {
 
     // Create new budget summary
     _budgetSummary = BudgetSummary(
-        totalBudget: newTotalBudget,
-        totalSpending: _budgetSummary!.totalSpending,
-        remainingBudget: newRemainingBudget,
-        categories: updatedCategories,
-        month: _budgetSummary!.month,
-        year: _budgetSummary!.year,
-        id: _budgetSummary!.id);
+      totalBudget: newTotalBudget,
+      totalSpending: _budgetSummary!.totalSpending,
+      remainingBudget: newRemainingBudget,
+      categories: updatedCategories,
+      month: _budgetSummary!.month,
+      year: _budgetSummary!.year,
+      id: _budgetSummary!.id,
+    );
 
     // Update local storage with the modified summary
-    storeBudgetSummaryInStorage({
-      'success': true,
-      'summary': {
-        'totalBudget': _budgetSummary!.totalBudget,
-        'totalSpending': _budgetSummary!.totalSpending,
-        'remainingBudget': _budgetSummary!.remainingBudget,
-        'month': _budgetSummary!.month,
-        'year': _budgetSummary!.year,
-        '_id': _budgetSummary!.id,
-        'categories': _budgetSummary!.categories
-            .map((cat) => {
-                  'category': cat.category,
-                  'budget': cat.budget,
-                  'actual': cat.actual,
-                  'remaining': cat.remaining,
-                })
-            .toList(),
-      }
-    }, month: _budgetSummary!.month, year: _budgetSummary!.year);
+    storeBudgetSummaryInStorage(
+      {
+        'success': true,
+        'summary': {
+          'totalBudget': _budgetSummary!.totalBudget,
+          'totalSpending': _budgetSummary!.totalSpending,
+          'remainingBudget': _budgetSummary!.remainingBudget,
+          'month': _budgetSummary!.month,
+          'year': _budgetSummary!.year,
+          '_id': _budgetSummary!.id,
+          'categories':
+              _budgetSummary!.categories
+                  .map(
+                    (cat) => {
+                      'category': cat.category,
+                      'budget': cat.budget,
+                      'actual': cat.actual,
+                      'remaining': cat.remaining,
+                    },
+                  )
+                  .toList(),
+        },
+      },
+      month: _budgetSummary!.month,
+      year: _budgetSummary!.year,
+    );
   }
 
   // Set category budget (original method)
@@ -535,7 +578,8 @@ class BudgetStore with ChangeNotifier {
 
   // Set multiple category budgets
   Future<void> setMultipleCategoryBudgets(
-      Map<String, double> categoryBudgets) async {
+    Map<String, double> categoryBudgets,
+  ) async {
     _loading = true;
     notifyListeners();
 
@@ -543,8 +587,9 @@ class BudgetStore with ChangeNotifier {
     final oldBudget = Map<String, double>.from(_budget.categoryBudgets);
 
     try {
-      final response =
-          await _budgetService.setMultipleCategoryBudgets(categoryBudgets);
+      final response = await _budgetService.setMultipleCategoryBudgets(
+        categoryBudgets,
+      );
 
       if (response['success'] == true && response['budget'] != null) {
         _budget = Budget.fromJson(response['budget']);
@@ -554,7 +599,7 @@ class BudgetStore with ChangeNotifier {
           // Process each changed, added, or removed category
           final Set<String> allCategories = {
             ...oldBudget.keys,
-            ...categoryBudgets.keys
+            ...categoryBudgets.keys,
           };
 
           for (final category in allCategories) {
@@ -564,7 +609,10 @@ class BudgetStore with ChangeNotifier {
             // Only update if there's a change
             if (oldAmount != newAmount) {
               _updateSummaryForCategoryBudgetChange(
-                  category, oldAmount, newAmount);
+                category,
+                oldAmount,
+                newAmount,
+              );
             }
           }
         }
@@ -578,7 +626,8 @@ class BudgetStore with ChangeNotifier {
 
         _error = null;
       } else {
-        _error = response['errorMessage'] ??
+        _error =
+            response['errorMessage'] ??
             'Failed to update multiple category budgets';
       }
     } catch (e) {
@@ -641,7 +690,9 @@ class BudgetStore with ChangeNotifier {
       // Also refresh summary if we have it
       if (_budgetSummary != null) {
         await fetchBudgetSummary(
-            month: _budgetSummary!.month, year: _budgetSummary!.year);
+          month: _budgetSummary!.month,
+          year: _budgetSummary!.year,
+        );
       }
     } catch (e) {
       _error = 'Error refreshing budget data: $e';
@@ -659,8 +710,13 @@ class BudgetStore with ChangeNotifier {
   }
 
   // Update budget summary when expenses are added, edited, or deleted
-  void updateBudgetForExpenseChange(num expenseAmount, String category,
-      {bool isAddition = true, bool isUpdate = false, num? oldAmount}) {
+  void updateBudgetForExpenseChange(
+    num expenseAmount,
+    String category, {
+    bool isAddition = true,
+    bool isUpdate = false,
+    num? oldAmount,
+  }) {
     if (_budgetSummary == null) return;
 
     // Convert num to double to avoid type issues
@@ -688,67 +744,76 @@ class BudgetStore with ChangeNotifier {
     // Create updated category list
     List<CategorySummary> updatedCategories =
         _budgetSummary!.categories.map((cat) {
-      // If this is the affected category, update it
-      if (cat.category.toLowerCase() == category.toLowerCase()) {
-        double newActual = cat.actual;
+          // If this is the affected category, update it
+          if (cat.category.toLowerCase() == category.toLowerCase()) {
+            double newActual = cat.actual;
 
-        // Handle update case first (remove old amount)
-        if (isUpdate && oldAmountDouble != null) {
-          newActual -= oldAmountDouble;
-        }
+            // Handle update case first (remove old amount)
+            if (isUpdate && oldAmountDouble != null) {
+              newActual -= oldAmountDouble;
+            }
 
-        // Apply the new amount
-        if (isAddition) {
-          newActual += expenseAmountDouble;
-        } else {
-          newActual -= expenseAmountDouble;
-        }
+            // Apply the new amount
+            if (isAddition) {
+              newActual += expenseAmountDouble;
+            } else {
+              newActual -= expenseAmountDouble;
+            }
 
-        // Calculate new remaining amount
-        double newRemaining = cat.budget - newActual;
+            // Calculate new remaining amount
+            double newRemaining = cat.budget - newActual;
 
-        // Return updated category
-        return CategorySummary(
-            category: cat.category,
-            budget: cat.budget,
-            actual: newActual,
-            remaining: newRemaining);
-      }
+            // Return updated category
+            return CategorySummary(
+              category: cat.category,
+              budget: cat.budget,
+              actual: newActual,
+              remaining: newRemaining,
+            );
+          }
 
-      // Return unchanged category
-      return cat;
-    }).toList();
+          // Return unchanged category
+          return cat;
+        }).toList();
 
     // Create new budget summary
     _budgetSummary = BudgetSummary(
-        totalBudget: _budgetSummary!.totalBudget,
-        totalSpending: newTotalSpending,
-        remainingBudget: newRemainingBudget,
-        categories: updatedCategories,
-        month: _budgetSummary!.month,
-        year: _budgetSummary!.year,
-        id: _budgetSummary!.id);
+      totalBudget: _budgetSummary!.totalBudget,
+      totalSpending: newTotalSpending,
+      remainingBudget: newRemainingBudget,
+      categories: updatedCategories,
+      month: _budgetSummary!.month,
+      year: _budgetSummary!.year,
+      id: _budgetSummary!.id,
+    );
 
     // Update local storage with the modified summary
-    storeBudgetSummaryInStorage({
-      'success': true,
-      'summary': {
-        'totalBudget': _budgetSummary!.totalBudget,
-        'totalSpending': _budgetSummary!.totalSpending,
-        'remainingBudget': _budgetSummary!.remainingBudget,
-        'month': _budgetSummary!.month,
-        'year': _budgetSummary!.year,
-        '_id': _budgetSummary!.id,
-        'categories': _budgetSummary!.categories
-            .map((cat) => {
-                  'category': cat.category,
-                  'budget': cat.budget,
-                  'actual': cat.actual,
-                  'remaining': cat.remaining,
-                })
-            .toList(),
-      }
-    }, month: _budgetSummary!.month, year: _budgetSummary!.year);
+    storeBudgetSummaryInStorage(
+      {
+        'success': true,
+        'summary': {
+          'totalBudget': _budgetSummary!.totalBudget,
+          'totalSpending': _budgetSummary!.totalSpending,
+          'remainingBudget': _budgetSummary!.remainingBudget,
+          'month': _budgetSummary!.month,
+          'year': _budgetSummary!.year,
+          '_id': _budgetSummary!.id,
+          'categories':
+              _budgetSummary!.categories
+                  .map(
+                    (cat) => {
+                      'category': cat.category,
+                      'budget': cat.budget,
+                      'actual': cat.actual,
+                      'remaining': cat.remaining,
+                    },
+                  )
+                  .toList(),
+        },
+      },
+      month: _budgetSummary!.month,
+      year: _budgetSummary!.year,
+    );
 
     // Notify listeners about the changes
     notifyListeners();

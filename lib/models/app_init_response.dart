@@ -1,5 +1,5 @@
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/models/budget.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/models/budget.dart';
 
 // Helper functions for parsing numeric values
 double _parseDouble(dynamic value) {
@@ -39,46 +39,49 @@ class AppInitResponse {
 
   factory AppInitResponse.fromJson(Map<String, dynamic> json) {
     return AppInitResponse(
-      expenses: ((json['expenses'] as List?) ?? [])
-          .map((e) => Expense.fromJson(e))
-          .toList(),
-      quota: json['quota'] != null
-          ? QuotaInfo.fromJson(json['quota'])
-          : QuotaInfo(
-              hasQuotaLeft: false,
-              remainingQuota: 0,
-              isPremium: false,
-              dailyLimit: 0,
-              standardLimit: 0,
-              premiumLimit: 0,
-            ),
-      budget: json['budget'] != null
-          ? BudgetInfo.fromJson(json['budget'])
-          : BudgetInfo(
-              categories: [],
-              budgetExists: false,
-            ),
-      budgetSummary: json['budgetSummary'] != null
-          ? BudgetSummary.fromJson(json['budgetSummary'])
-          : BudgetSummary(
-              totalBudget: 0.0,
-              totalSpending: 0.0,
-              remainingBudget: 0.0,
-              categories: [],
-              month: DateTime.now().month,
-              year: DateTime.now().year,
-              budgetExists: false,
-            ),
-      featureFlags: (json['featureFlags'] != null)
-          ? Map<String, bool>.from(json['featureFlags'])
-          : {},
+      expenses:
+          ((json['expenses'] as List?) ?? [])
+              .map((e) => Expense.fromJson(e))
+              .toList(),
+      quota:
+          json['quota'] != null
+              ? QuotaInfo.fromJson(json['quota'])
+              : QuotaInfo(
+                hasQuotaLeft: false,
+                remainingQuota: 0,
+                isPremium: false,
+                dailyLimit: 0,
+                standardLimit: 0,
+                premiumLimit: 0,
+              ),
+      budget:
+          json['budget'] != null
+              ? BudgetInfo.fromJson(json['budget'])
+              : BudgetInfo(categories: [], budgetExists: false),
+      budgetSummary:
+          json['budgetSummary'] != null
+              ? BudgetSummary.fromJson(json['budgetSummary'])
+              : BudgetSummary(
+                totalBudget: 0.0,
+                totalSpending: 0.0,
+                remainingBudget: 0.0,
+                categories: [],
+                month: DateTime.now().month,
+                year: DateTime.now().year,
+                budgetExists: false,
+              ),
+      featureFlags:
+          (json['featureFlags'] != null)
+              ? Map<String, bool>.from(json['featureFlags'])
+              : {},
       config: json['config'] ?? {},
-      dateRange: json['dateRange'] != null
-          ? DateRange.fromJson(json['dateRange'])
-          : DateRange(
-              fromDate: DateTime.now().subtract(const Duration(days: 30)),
-              toDate: DateTime.now(),
-            ),
+      dateRange:
+          json['dateRange'] != null
+              ? DateRange.fromJson(json['dateRange'])
+              : DateRange(
+                fromDate: DateTime.now().subtract(const Duration(days: 30)),
+                toDate: DateTime.now(),
+              ),
     );
   }
 }
@@ -156,12 +159,13 @@ class BudgetSummary {
       totalBudget: _parseDouble(json['totalBudget']),
       totalSpending: _parseDouble(json['totalSpending']),
       remainingBudget: _parseDouble(json['remainingBudget']),
-      categories: json['categories'] != null
-          ? ((json['categories'] as List?)
-                  ?.map((e) => CategorySummary.fromJson(e))
-                  .toList() ??
-              [])
-          : [],
+      categories:
+          json['categories'] != null
+              ? ((json['categories'] as List?)
+                      ?.map((e) => CategorySummary.fromJson(e))
+                      .toList() ??
+                  [])
+              : [],
       month: _parseInt(json['month']),
       year: _parseInt(json['year']),
       budgetExists: json['budgetExists'] ?? false,
@@ -196,10 +200,7 @@ class DateRange {
   final DateTime fromDate;
   final DateTime toDate;
 
-  DateRange({
-    required this.fromDate,
-    required this.toDate,
-  });
+  DateRange({required this.fromDate, required this.toDate});
 
   factory DateRange.fromJson(Map<String, dynamic> json) {
     return DateRange(

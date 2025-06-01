@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:budget_ai/components/expense_card.dart';
-import 'package:budget_ai/components/create_expense_form.dart';
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/services/subscription_service.dart';
-import 'package:budget_ai/services/initialization_service.dart';
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/components/expense_card.dart';
+import 'package:coin_master_ai/components/create_expense_form.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/services/subscription_service.dart';
+import 'package:coin_master_ai/services/initialization_service.dart';
+import 'package:coin_master_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +57,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
         _isLoading = false;
       });
       print(
-          "Using quota data from parent: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium");
+        "Using quota data from parent: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium",
+      );
     } else {
       // Only call API if parent didn't provide values
       _loadSubscriptionData();
@@ -112,7 +113,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
         }
 
         print(
-            "Using cached quota data: remaining=$_remainingMessages, limit=$_dailyLimit");
+          "Using cached quota data: remaining=$_remainingMessages, limit=$_dailyLimit",
+        );
       }
 
       // Then try to get fresh data from server API
@@ -131,7 +133,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
       }
 
       print(
-          "Quota status: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium");
+        "Quota status: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium",
+      );
     } catch (e) {
       print("Error loading subscription data: $e");
 
@@ -173,7 +176,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
         });
 
         print(
-            "Updated message input from cache: remaining=$remainingQuota, limit=$dailyLimit");
+          "Updated message input from cache: remaining=$remainingQuota, limit=$dailyLimit",
+        );
       }
     } catch (e) {
       print("Error updating from cached quota: $e");
@@ -192,14 +196,16 @@ class _AIMessageInputState extends State<AIMessageInput> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateExpenseForm(
-          onExpenseCreated: (Expense expense) {
-            // Pass expense directly to onAddMessage
-            print(
-                "Expense created and being passed to onAddMessage: ${expense.id}");
-            widget.onAddMessage(expense);
-          },
-        ),
+        builder:
+            (context) => CreateExpenseForm(
+              onExpenseCreated: (Expense expense) {
+                // Pass expense directly to onAddMessage
+                print(
+                  "Expense created and being passed to onAddMessage: ${expense.id}",
+                );
+                widget.onAddMessage(expense);
+              },
+            ),
       ),
     );
   }
@@ -221,12 +227,14 @@ class _AIMessageInputState extends State<AIMessageInput> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkPrimaryBackground
-        : NeumorphicColors.lightPrimaryBackground;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkPrimaryBackground
+            : NeumorphicColors.lightPrimaryBackground;
     final accentColor =
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
@@ -246,20 +254,21 @@ class _AIMessageInputState extends State<AIMessageInput> {
                   hintText: "Describe your expense (e.g., '250 for lunch')",
                   prefixIcon: Icon(
                     Icons.message_outlined,
-                    color: isDark
-                        ? NeumorphicColors.darkTextSecondary
-                        : NeumorphicColors.lightTextSecondary,
+                    color:
+                        isDark
+                            ? NeumorphicColors.darkTextSecondary
+                            : NeumorphicColors.lightTextSecondary,
                   ),
-                  onSubmitted: (widget.isDisabled || _remainingMessages <= 0)
-                      ? null
-                      : (value) {
-                          _onSendPressed();
-                        },
+                  onSubmitted:
+                      _controller.text.trim().isEmpty
+                          ? null
+                          : (value) {
+                            _onSendPressed();
+                          },
                 ),
               ),
 
               const SizedBox(width: 8), // Reduced spacing from 14 to 8
-
               // Add expense button (floating action button with tooltip)
               Tooltip(
                 message: "Add expense manually",
@@ -270,21 +279,25 @@ class _AIMessageInputState extends State<AIMessageInput> {
                   context: context,
                   size: 48,
                   depth: 4.0,
-                  color: isDark
-                      ? Colors.grey
-                          .withOpacity(0.2) // Muted background for dark mode
-                      : Colors.grey
-                          .withOpacity(0.1), // Muted background for light mode
+                  color:
+                      isDark
+                          ? Colors.grey.withOpacity(
+                            0.2,
+                          ) // Muted background for dark mode
+                          : Colors.grey.withOpacity(
+                            0.1,
+                          ), // Muted background for light mode
                   icon: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.add,
-                        color: isDark
-                            ? Colors
-                                .grey[400] // Less vibrant color in dark mode
-                            : Colors
-                                .grey[600], // Less vibrant color in light mode
+                        color:
+                            isDark
+                                ? Colors
+                                    .grey[400] // Less vibrant color in dark mode
+                                : Colors
+                                    .grey[600], // Less vibrant color in light mode
                         size: 22,
                       ),
                       Text(
@@ -292,11 +305,12 @@ class _AIMessageInputState extends State<AIMessageInput> {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors
-                                  .grey[400] // Less vibrant color in dark mode
-                              : Colors.grey[
-                                  600], // Less vibrant color in light mode
+                          color:
+                              isDark
+                                  ? Colors
+                                      .grey[400] // Less vibrant color in dark mode
+                                  : Colors
+                                      .grey[600], // Less vibrant color in light mode
                         ),
                       ),
                     ],
@@ -306,7 +320,6 @@ class _AIMessageInputState extends State<AIMessageInput> {
               ),
 
               const SizedBox(width: 8), // Reduced spacing from 14 to 8
-
               // Send message button with tooltip
               Tooltip(
                 message: "Send expense message",
@@ -324,10 +337,12 @@ class _AIMessageInputState extends State<AIMessageInput> {
                     children: [
                       Icon(
                         Icons.send,
-                        color: (_remainingMessages <= 0 && !_isPremium)
-                            ? accentColor.withOpacity(
-                                0.5) // Still colored but dimmed when disabled
-                            : accentColor,
+                        color:
+                            _remainingMessages <= 0
+                                ? accentColor.withOpacity(
+                                  0.5,
+                                ) // Still colored but dimmed when disabled
+                                : accentColor,
                         size: 18,
                       ),
                       Text(
@@ -335,10 +350,12 @@ class _AIMessageInputState extends State<AIMessageInput> {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: (_remainingMessages <= 0 && !_isPremium)
-                              ? accentColor.withOpacity(
-                                  0.5) // Still colored but dimmed when disabled
-                              : accentColor,
+                          color:
+                              _remainingMessages <= 0
+                                  ? accentColor.withOpacity(
+                                    0.5,
+                                  ) // Still colored but dimmed when disabled
+                                  : accentColor,
                         ),
                       ),
                     ],
@@ -348,13 +365,9 @@ class _AIMessageInputState extends State<AIMessageInput> {
                   // Just show the remaining count (simpler)
                   badgeText: '$_remainingMessages',
                   badgeColor: _getMessageCountColor(),
-                  isDisabled: _controller.text.trim().isEmpty ||
-                      widget.isDisabled ||
-                      (_remainingMessages <= 0),
+                  isDisabled: _isSendButtonDisabled(),
                   onPressed: () {
-                    if (!(_controller.text.trim().isEmpty ||
-                        widget.isDisabled ||
-                        (_remainingMessages <= 0))) {
+                    if (!(_isSendButtonDisabled())) {
                       _onSendPressed();
                     }
                   },
@@ -418,61 +431,62 @@ class _AIMessageInputState extends State<AIMessageInput> {
     showDialog(
       context: context,
       barrierDismissible: false, // Prevent dismissal by tapping outside
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.lightbulb_outline, color: accentColor),
-            const SizedBox(width: 10),
-            const Text("Quick Expense Entry"),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHintItem(
-              context,
-              icon: Icons.chat_outlined,
-              title: "AI-Powered Expense Entry",
-              description:
-                  "Simply type what you spent money on and let AI figure out the details.",
-              example: "\"250 for lunch\"  or  \"1038 face wash\"",
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.lightbulb_outline, color: accentColor),
+                const SizedBox(width: 10),
+                const Text("Quick Expense Entry"),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildHintItem(
-              context,
-              icon: Icons.add_circle_outline,
-              title: "Manual Entry",
-              description:
-                  "Tap the + button to enter expense details manually with categories.",
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHintItem(
+                  context,
+                  icon: Icons.chat_outlined,
+                  title: "AI-Powered Expense Entry",
+                  description:
+                      "Simply type what you spent money on and let AI figure out the details.",
+                  example: "\"250 for lunch\"  or  \"1038 face wash\"",
+                ),
+                const SizedBox(height: 16),
+                _buildHintItem(
+                  context,
+                  icon: Icons.add_circle_outline,
+                  title: "Manual Entry",
+                  description:
+                      "Tap the + button to enter expense details manually with categories.",
+                ),
+                const SizedBox(height: 16),
+                _buildHintItem(
+                  context,
+                  icon: Icons.send,
+                  title: "Send Button",
+                  description:
+                      "Tap the send button once you've typed your expense.",
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildHintItem(
-              context,
-              icon: Icons.send,
-              title: "Send Button",
-              description:
-                  "Tap the send button once you've typed your expense.",
-            ),
-          ],
-        ),
-        actions: [
-          TextButton.icon(
-            icon:
-                Icon(Icons.check_circle_outline, color: accentColor, size: 18),
-            label: Text(
-              "Got it",
-              style: TextStyle(color: accentColor),
-            ),
-            onPressed: () async {
-              // Save that user has seen the hint
-              await _markHintAsSeen();
+            actions: [
+              TextButton.icon(
+                icon: Icon(
+                  Icons.check_circle_outline,
+                  color: accentColor,
+                  size: 18,
+                ),
+                label: Text("Got it", style: TextStyle(color: accentColor)),
+                onPressed: () async {
+                  // Save that user has seen the hint
+                  await _markHintAsSeen();
 
-              if (mounted) Navigator.pop(context);
-            },
+                  if (mounted) Navigator.pop(context);
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     ).then((_) {
       // Ensure flag is reset even if dialog is dismissed another way
       if (mounted) {
@@ -492,12 +506,14 @@ class _AIMessageInputState extends State<AIMessageInput> {
     String? example,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
-    final descColor = isDark
-        ? NeumorphicColors.darkTextSecondary
-        : NeumorphicColors.lightTextSecondary;
+    final titleColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
+    final descColor =
+        isDark
+            ? NeumorphicColors.darkTextSecondary
+            : NeumorphicColors.lightTextSecondary;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,22 +534,19 @@ class _AIMessageInputState extends State<AIMessageInput> {
               const SizedBox(height: 4),
               Text(
                 description,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: descColor,
-                ),
+                style: TextStyle(fontSize: 13, color: descColor),
               ),
               if (example != null) ...[
                 const SizedBox(height: 4),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.grey.withOpacity(0.2),
-                    ),
+                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
                   ),
                   child: Text(
                     "Examples: $example",
@@ -561,5 +574,13 @@ class _AIMessageInputState extends State<AIMessageInput> {
     } else {
       return Colors.green;
     }
+  }
+
+  // Centralized logic for determining if send button should be disabled
+  bool _isSendButtonDisabled() {
+    print(
+      "isSendButtonDisabled: ${_controller.text.trim().isEmpty} || ${widget.isDisabled} || ${_remainingMessages <= 0}",
+    );
+    return widget.isDisabled || _remainingMessages <= 0;
   }
 }

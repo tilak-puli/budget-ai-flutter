@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:budget_ai/theme/neumorphic_colors.dart';
+import 'package:coin_master_ai/theme/neumorphic_colors.dart';
 
 /// App theme configuration for Coin Master AI
 /// Based on Neumorphism 2.0 Design Specification
@@ -76,21 +76,15 @@ class AppTheme {
         backgroundColor: NeumorphicColors.lightPrimaryBackground,
         elevation: 0,
         titleTextStyle: textTheme.titleLarge,
-        iconTheme: IconThemeData(
-          color: NeumorphicColors.lightTextPrimary,
-        ),
+        iconTheme: IconThemeData(color: NeumorphicColors.lightTextPrimary),
       ),
       cardTheme: CardTheme(
         color: NeumorphicColors.lightPrimaryBackground,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       buttonTheme: ButtonThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -185,21 +179,15 @@ class AppTheme {
         backgroundColor: NeumorphicColors.darkPrimaryBackground,
         elevation: 0,
         titleTextStyle: textTheme.titleLarge,
-        iconTheme: IconThemeData(
-          color: NeumorphicColors.darkTextPrimary,
-        ),
+        iconTheme: IconThemeData(color: NeumorphicColors.darkTextPrimary),
       ),
       cardTheme: CardTheme(
         color: NeumorphicColors.darkPrimaryBackground,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       buttonTheme: ButtonThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

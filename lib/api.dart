@@ -1,4 +1,4 @@
-import 'package:budget_ai/models/expense.dart';
+import 'package:coin_master_ai/models/expense.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;

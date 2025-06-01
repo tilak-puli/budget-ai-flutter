@@ -1,6 +1,6 @@
-import 'package:budget_ai/models/expense_list.dart';
-import 'package:budget_ai/theme/index.dart';
-import 'package:budget_ai/utils/money.dart';
+import 'package:coin_master_ai/models/expense_list.dart';
+import 'package:coin_master_ai/theme/index.dart';
+import 'package:coin_master_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'dart:math' as math;

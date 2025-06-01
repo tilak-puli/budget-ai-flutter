@@ -1,7 +1,7 @@
-import 'package:budget_ai/models/budget.dart';
-import 'package:budget_ai/state/budget_store.dart';
-import 'package:budget_ai/theme/index.dart';
-import 'package:budget_ai/utils/money.dart';
+import 'package:coin_master_ai/models/budget.dart';
+import 'package:coin_master_ai/state/budget_store.dart';
+import 'package:coin_master_ai/theme/index.dart';
+import 'package:coin_master_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -40,9 +40,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
       // The budget data is already loaded by the homepage, just use it
       // Just update the controller with the current budget value
-      _totalBudgetController.text = budgetStore.budget.totalBudget > 0
-          ? budgetStore.budget.totalBudget.toString()
-          : '';
+      _totalBudgetController.text =
+          budgetStore.budget.totalBudget > 0
+              ? budgetStore.budget.totalBudget.toString()
+              : '';
 
       _isInitialized = true;
     }
@@ -52,28 +53,31 @@ class _BudgetScreenState extends State<BudgetScreen> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkPrimaryBackground
-        : NeumorphicColors.lightPrimaryBackground;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkPrimaryBackground
+            : NeumorphicColors.lightPrimaryBackground;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
     final accentColor =
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
@@ -96,9 +100,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ),
               ],
             ),
-            body: const Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -180,12 +182,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                   hintText: 'Enter total budget amount',
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
-                                          decimal: true),
+                                        decimal: true,
+                                      ),
                                   prefixIcon: Icon(
                                     Icons.attach_money,
-                                    color: isDark
-                                        ? NeumorphicColors.darkTextSecondary
-                                        : NeumorphicColors.lightTextSecondary,
+                                    color:
+                                        isDark
+                                            ? NeumorphicColors.darkTextSecondary
+                                            : NeumorphicColors
+                                                .lightTextSecondary,
                                   ),
                                   onChanged: (value) {
                                     // Optional validation
@@ -200,23 +205,27 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                   // Validate and save the total budget
                                   if (_totalBudgetController.text.isEmpty) {
                                     _showErrorDialog(
-                                        'Please enter a budget amount');
+                                      'Please enter a budget amount',
+                                    );
                                     return;
                                   }
 
                                   try {
                                     final amount = double.parse(
-                                        _totalBudgetController.text);
+                                      _totalBudgetController.text,
+                                    );
                                     if (amount <= 0) {
                                       _showErrorDialog(
-                                          'Please enter a valid amount greater than zero');
+                                        'Please enter a valid amount greater than zero',
+                                      );
                                       return;
                                     }
 
                                     await budgetStore.setTotalBudget(amount);
                                   } catch (e) {
                                     _showErrorDialog(
-                                        'Please enter a valid number');
+                                      'Please enter a valid number',
+                                    );
                                   }
                                 },
                                 child: Text(
@@ -273,7 +282,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 ),
                                 onPressed: () {
                                   _showAddCategoryBudgetDialog(
-                                      context, budgetStore);
+                                    context,
+                                    budgetStore,
+                                  );
                                 },
                               ),
                             ],
@@ -285,9 +296,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             Text(
                               'No category budgets set. Tap the + button to add a category budget.',
                               style: TextStyle(
-                                color: isDark
-                                    ? NeumorphicColors.darkTextSecondary
-                                    : NeumorphicColors.lightTextSecondary,
+                                color:
+                                    isDark
+                                        ? NeumorphicColors.darkTextSecondary
+                                        : NeumorphicColors.lightTextSecondary,
                               ),
                             )
                           else
@@ -298,16 +310,25 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                   budgetStore.budget.categoryBudgets.length,
                               itemBuilder: (context, index) {
                                 final category = budgetStore
-                                    .budget.categoryBudgets.keys
+                                    .budget
+                                    .categoryBudgets
+                                    .keys
                                     .elementAt(index);
-                                final amount = budgetStore
-                                    .budget.categoryBudgets[category]!;
+                                final amount =
+                                    budgetStore
+                                        .budget
+                                        .categoryBudgets[category]!;
 
                                 return CategoryBudgetItem(
                                   category: category,
                                   amount: amount,
-                                  onEdit: () => _showEditCategoryBudgetDialog(
-                                      context, budgetStore, category, amount),
+                                  onEdit:
+                                      () => _showEditCategoryBudgetDialog(
+                                        context,
+                                        budgetStore,
+                                        category,
+                                        amount,
+                                      ),
                                 );
                               },
                             ),
@@ -339,7 +360,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
                             // Summary data
                             BudgetSummaryWidget(
-                                summary: budgetStore.budgetSummary!),
+                              summary: budgetStore.budgetSummary!,
+                            ),
                           ],
                         ),
                       ),
@@ -355,14 +377,17 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   // Dialog to add a new category budget
   void _showAddCategoryBudgetDialog(
-      BuildContext context, BudgetStore budgetStore) {
+    BuildContext context,
+    BudgetStore budgetStore,
+  ) {
     final TextEditingController amountController = TextEditingController();
     String selectedCategory = budgetStore.categories.first;
 
     // Filter out categories that already have a budget
-    final availableCategories = budgetStore.categories
-        .where((c) => !budgetStore.budget.categoryBudgets.containsKey(c))
-        .toList();
+    final availableCategories =
+        budgetStore.categories
+            .where((c) => !budgetStore.budget.categoryBudgets.containsKey(c))
+            .toList();
 
     if (availableCategories.isEmpty) {
       _showErrorDialog('All categories already have budgets assigned.');
@@ -374,81 +399,87 @@ class _BudgetScreenState extends State<BudgetScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Add Category Budget'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Category dropdown
-                DropdownButtonFormField<String>(
-                  value: selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Add Category Budget'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Category dropdown
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedCategory = newValue;
+                        });
+                      }
+                    },
+                    items:
+                        availableCategories.map<DropdownMenuItem<String>>((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
                   ),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        selectedCategory = newValue;
-                      });
-                    }
-                  },
-                  items: availableCategories
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Amount field
-                TextField(
-                  controller: amountController,
-                  decoration: const InputDecoration(
-                    labelText: 'Budget Amount',
-                    prefixIcon: Icon(Icons.attach_money),
+                  // Amount field
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(
+                      labelText: 'Budget Amount',
+                      prefixIcon: Icon(Icons.attach_money),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                ],
               ),
-              TextButton(
-                onPressed: () async {
-                  // Validate and save
-                  if (amountController.text.isEmpty) {
-                    _showErrorDialog('Please enter a budget amount');
-                    return;
-                  }
-
-                  try {
-                    final amount = double.parse(amountController.text);
-                    if (amount <= 0) {
-                      _showErrorDialog(
-                          'Please enter a valid amount greater than zero');
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // Validate and save
+                    if (amountController.text.isEmpty) {
+                      _showErrorDialog('Please enter a budget amount');
                       return;
                     }
 
-                    Navigator.pop(context);
-                    await budgetStore.setCategoryBudget(
-                        selectedCategory, amount);
-                  } catch (e) {
-                    _showErrorDialog('Please enter a valid number');
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        });
+                    try {
+                      final amount = double.parse(amountController.text);
+                      if (amount <= 0) {
+                        _showErrorDialog(
+                          'Please enter a valid amount greater than zero',
+                        );
+                        return;
+                      }
+
+                      Navigator.pop(context);
+                      await budgetStore.setCategoryBudget(
+                        selectedCategory,
+                        amount,
+                      );
+                    } catch (e) {
+                      _showErrorDialog('Please enter a valid number');
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
       },
     ).then((_) {
       amountController.dispose();
@@ -456,10 +487,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   // Dialog to edit an existing category budget
-  void _showEditCategoryBudgetDialog(BuildContext context,
-      BudgetStore budgetStore, String category, double currentAmount) {
-    final TextEditingController amountController =
-        TextEditingController(text: currentAmount.toString());
+  void _showEditCategoryBudgetDialog(
+    BuildContext context,
+    BudgetStore budgetStore,
+    String category,
+    double currentAmount,
+  ) {
+    final TextEditingController amountController = TextEditingController(
+      text: currentAmount.toString(),
+    );
 
     showDialog(
       context: context,
@@ -476,8 +512,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   labelText: 'Budget Amount',
                   prefixIcon: Icon(Icons.attach_money),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
             ],
           ),
@@ -492,9 +529,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 Navigator.pop(context);
 
                 // Create a copy of existing budgets without this category
-                final updatedBudgets =
-                    Map<String, double>.from(budgetStore.budget.categoryBudgets)
-                      ..remove(category);
+                final updatedBudgets = Map<String, double>.from(
+                  budgetStore.budget.categoryBudgets,
+                )..remove(category);
 
                 await budgetStore.setMultipleCategoryBudgets(updatedBudgets);
               },
@@ -512,7 +549,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   final amount = double.parse(amountController.text);
                   if (amount <= 0) {
                     _showErrorDialog(
-                        'Please enter a valid amount greater than zero');
+                      'Please enter a valid amount greater than zero',
+                    );
                     return;
                   }
 
@@ -609,9 +647,10 @@ class _CategoryBudgetItemState extends State<CategoryBudgetItem> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkCardBackground.withOpacity(0.3)
-        : NeumorphicColors.lightCardBackground.withOpacity(0.3);
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkCardBackground.withOpacity(0.3)
+            : NeumorphicColors.lightCardBackground.withOpacity(0.3);
 
     return Card(
       elevation: 0,
@@ -698,10 +737,7 @@ class _CategoryBudgetItemState extends State<CategoryBudgetItem> {
                         fontSize: 14,
                       ),
                     ),
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: textColor, fontSize: 14),
                     onChanged: (value) {
                       setState(() {
                         _isEditing = true;
@@ -803,10 +839,8 @@ class _CategoryBudgetItemState extends State<CategoryBudgetItem> {
 class BudgetSummaryWidget extends StatelessWidget {
   final BudgetSummary summary;
 
-  const BudgetSummaryWidget({
-    Key? key,
-    required this.summary,
-  }) : super(key: key);
+  const BudgetSummaryWidget({Key? key, required this.summary})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -815,9 +849,10 @@ class BudgetSummaryWidget extends StatelessWidget {
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
     // Calculate percentage
-    final progressPercentage = summary.totalBudget > 0
-        ? (summary.totalSpending / summary.totalBudget).clamp(0.0, 1.0)
-        : 0.0;
+    final progressPercentage =
+        summary.totalBudget > 0
+            ? (summary.totalSpending / summary.totalBudget).clamp(0.0, 1.0)
+            : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -827,9 +862,10 @@ class BudgetSummaryWidget extends StatelessWidget {
           'Summary for ${_getMonthName(summary.month)} ${summary.year}',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: isDark
-                ? NeumorphicColors.darkTextSecondary
-                : NeumorphicColors.lightTextSecondary,
+            color:
+                isDark
+                    ? NeumorphicColors.darkTextSecondary
+                    : NeumorphicColors.lightTextSecondary,
           ),
         ),
         const SizedBox(height: 16),
@@ -854,9 +890,10 @@ class BudgetSummaryWidget extends StatelessWidget {
               currencyFormat.format(summary.totalSpending),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: summary.totalSpending > summary.totalBudget
-                    ? Colors.red
-                    : null,
+                color:
+                    summary.totalSpending > summary.totalBudget
+                        ? Colors.red
+                        : null,
               ),
             ),
           ],
@@ -907,10 +944,7 @@ class BudgetSummaryWidget extends StatelessWidget {
         // Category breakdown
         const Text(
           'Category Breakdown',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
 
@@ -942,7 +976,7 @@ class BudgetSummaryWidget extends StatelessWidget {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return months[month - 1]; // Month is 1-based
   }
@@ -952,19 +986,18 @@ class BudgetSummaryWidget extends StatelessWidget {
 class CategorySummaryItem extends StatelessWidget {
   final CategorySummary category;
 
-  const CategorySummaryItem({
-    Key? key,
-    required this.category,
-  }) : super(key: key);
+  const CategorySummaryItem({Key? key, required this.category})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Calculate percentage
-    final progressPercentage = category.budget > 0
-        ? (category.actual / category.budget).clamp(0.0, 1.0)
-        : 0.0;
+    final progressPercentage =
+        category.budget > 0
+            ? (category.actual / category.budget).clamp(0.0, 1.0)
+            : 0.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -982,9 +1015,10 @@ class CategorySummaryItem extends StatelessWidget {
                 '${currencyFormat.format(category.actual)} / ${currencyFormat.format(category.budget)}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark
-                      ? NeumorphicColors.darkTextSecondary
-                      : NeumorphicColors.lightTextSecondary,
+                  color:
+                      isDark
+                          ? NeumorphicColors.darkTextSecondary
+                          : NeumorphicColors.lightTextSecondary,
                 ),
               ),
             ],
@@ -992,9 +1026,10 @@ class CategorySummaryItem extends StatelessWidget {
           const SizedBox(height: 4),
           LinearProgressIndicator(
             value: progressPercentage,
-            backgroundColor: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.black.withOpacity(0.05),
+            backgroundColor:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.05),
             valueColor: AlwaysStoppedAnimation(
               progressPercentage >= 1.0 ? Colors.red : Colors.green,
             ),

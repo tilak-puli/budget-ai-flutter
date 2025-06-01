@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = budget_ai
+PRODUCT_NAME = coin_master_ai
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.tilakpuli.budgetAi
+PRODUCT_BUNDLE_IDENTIFIER = com.tilakpuli.coin_master_ai;
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2023 com.tilakpuli. All rights reserved.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:budget_ai/theme/theme_service.dart';
+import 'package:coin_master_ai/theme/theme_service.dart';
 
 /// Provider for theme service
 /// Use this to access theme functionality throughout the app
@@ -8,11 +8,8 @@ class ThemeProvider extends StatelessWidget {
   final Widget child;
   final ThemeService service;
 
-  const ThemeProvider({
-    Key? key,
-    required this.child,
-    required this.service,
-  }) : super(key: key);
+  const ThemeProvider({Key? key, required this.child, required this.service})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {

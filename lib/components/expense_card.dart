@@ -1,10 +1,10 @@
-import 'package:budget_ai/api.dart';
-import 'package:budget_ai/components/expense_form.dart';
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/state/chat_store.dart';
-import 'package:budget_ai/state/expense_store.dart';
-import 'package:budget_ai/theme/index.dart';
-import 'package:budget_ai/utils/money.dart';
+import 'package:coin_master_ai/api.dart';
+import 'package:coin_master_ai/components/expense_form.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/state/chat_store.dart';
+import 'package:coin_master_ai/state/expense_store.dart';
+import 'package:coin_master_ai/theme/index.dart';
+import 'package:coin_master_ai/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
@@ -44,65 +44,75 @@ class ExpenseCard extends StatelessWidget {
   final Expense expense;
   final bool inChatMessage;
 
-  const ExpenseCard(
-    this.expense, {
-    this.inChatMessage = false,
-    super.key,
-  });
+  const ExpenseCard(this.expense, {this.inChatMessage = false, super.key});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkCardBackground
-        : NeumorphicColors.lightCardBackground;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkCardBackground
+            : NeumorphicColors.lightCardBackground;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
     final categoryIcon = categoryIcons[expense.category] ?? Icons.attach_money;
 
     return Container(
-      margin: inChatMessage
-          ? EdgeInsets.zero
-          : const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-      decoration: inChatMessage
-          ? BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(12),
-            )
-          : NeumorphicBox.cardDecoration(
-              context: context,
-              color: backgroundColor,
-              borderRadius: 12.0,
-              depth: 4.0,
-            ),
+      margin:
+          inChatMessage
+              ? EdgeInsets.zero
+              : const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
+      decoration:
+          inChatMessage
+              ? BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(12),
+              )
+              : NeumorphicBox.cardDecoration(
+                context: context,
+                color: backgroundColor,
+                borderRadius: 12.0,
+                depth: 4.0,
+              ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => showDialog<String>(
-            context: context,
-            builder: (BuildContext context) => Dialog.fullscreen(
-              child: Consumer<ExpenseStore>(
-                builder: (context, expenseStore, child) {
-                  return Consumer<ChatStore>(
-                    builder: (context, chatStore, child) {
-                      return ExpenseDailog(expense, chatStore, expenseStore);
-                    },
-                  );
-                },
+          onTap:
+              () => showDialog<String>(
+                context: context,
+                builder:
+                    (BuildContext context) => Dialog.fullscreen(
+                      child: Consumer<ExpenseStore>(
+                        builder: (context, expenseStore, child) {
+                          return Consumer<ChatStore>(
+                            builder: (context, chatStore, child) {
+                              return ExpenseDailog(
+                                expense,
+                                chatStore,
+                                expenseStore,
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
               ),
-            ),
-          ),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Row(
               children: [
                 // Category badge
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0, vertical: 6.0),
+                    horizontal: 8.0,
+                    vertical: 6.0,
+                  ),
                   margin: const EdgeInsets.only(left: 4.0),
                   decoration: NeumorphicBox.insetDecoration(
                     context: context,
@@ -159,12 +169,7 @@ class ExpenseDailog extends StatelessWidget {
 
   late BuildContext context;
 
-  ExpenseDailog(
-    this.expense,
-    this.chatStore,
-    this.expenseStore, {
-    super.key,
-  });
+  ExpenseDailog(this.expense, this.chatStore, this.expenseStore, {super.key});
 
   Future<void> deleteExpense() async {
     EasyLoading.show(status: 'deleting...');
@@ -210,12 +215,14 @@ class ExpenseDailog extends StatelessWidget {
   Widget build(BuildContext context) {
     this.context = context;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkPrimaryBackground
-        : NeumorphicColors.lightPrimaryBackground;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkPrimaryBackground
+            : NeumorphicColors.lightPrimaryBackground;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
     final accentColor =
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
     final destructiveColor = Colors.redAccent.shade200;
@@ -225,10 +232,7 @@ class ExpenseDailog extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           "Edit Expense",
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
         ),
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -240,9 +244,10 @@ class ExpenseDailog extends StatelessWidget {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    backgroundColor: isDark
-                        ? NeumorphicColors.darkCardBackground
-                        : NeumorphicColors.lightCardBackground,
+                    backgroundColor:
+                        isDark
+                            ? NeumorphicColors.darkCardBackground
+                            : NeumorphicColors.lightCardBackground,
                     title: Text(
                       'Delete Expense',
                       style: TextStyle(
@@ -252,9 +257,7 @@ class ExpenseDailog extends StatelessWidget {
                     ),
                     content: Text(
                       'Are you sure you want to delete this expense?',
-                      style: TextStyle(
-                        color: textColor,
-                      ),
+                      style: TextStyle(color: textColor),
                     ),
                     actions: <Widget>[
                       TextButton(
@@ -263,9 +266,7 @@ class ExpenseDailog extends StatelessWidget {
                         },
                         child: Text(
                           'Cancel',
-                          style: TextStyle(
-                            color: textColor,
-                          ),
+                          style: TextStyle(color: textColor),
                         ),
                       ),
                       TextButton(
@@ -286,10 +287,7 @@ class ExpenseDailog extends StatelessWidget {
                 },
               );
             },
-            icon: Icon(
-              Icons.delete_outline,
-              color: destructiveColor,
-            ),
+            icon: Icon(Icons.delete_outline, color: destructiveColor),
           ),
         ],
       ),
@@ -317,14 +315,16 @@ class ExpenseDailog extends StatelessWidget {
                 vertical: 16.0,
               ),
               decoration: BoxDecoration(
-                color: isDark
-                    ? NeumorphicColors.darkCardBackground.withOpacity(0.7)
-                    : NeumorphicColors.lightCardBackground.withOpacity(0.7),
+                color:
+                    isDark
+                        ? NeumorphicColors.darkCardBackground.withOpacity(0.7)
+                        : NeumorphicColors.lightCardBackground.withOpacity(0.7),
                 border: Border(
                   top: BorderSide(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.black.withOpacity(0.05),
+                    color:
+                        isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.black.withOpacity(0.05),
                   ),
                 ),
               ),

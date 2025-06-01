@@ -30,6 +30,58 @@
           }
         },
         {
+          "client_id": "706321535461-ss834k9gblv76u7su0uos4n99ghob97i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tilakpuli.budget_ai",
+            "certificate_hash": "e83fbe676883dd8ae43be8703bf06a3ecb0224be"
+          }
+        },
+        {
+          "client_id": "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDE5pRKCtEhOvLL3CMIQb5iozJ2zn19yY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "706321535461-14kah81bdl2ohqgu8i4seevm172gj4gf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.budgetAi"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706321535461:android:685c44af38594c7f8d5f0c",
+        "android_client_info": {
+          "package_name": "com.tilakpuli.coin_master_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "706321535461-mrk9kuc4tjqmvcfn6acfs01g5i47tvv0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tilakpuli.coin_master_ai",
+            "certificate_hash": "e83fbe676883dd8ae43be8703bf06a3ecb0224be"
+          }
+        },
+        {
           "client_id": "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com",
           "client_type": 3
         }

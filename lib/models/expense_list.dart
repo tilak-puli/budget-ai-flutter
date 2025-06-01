@@ -1,4 +1,4 @@
-import 'package:budget_ai/models/expense.dart';
+import 'package:coin_master_ai/models/expense.dart';
 import "package:collection/collection.dart";
 
 class Expenses {

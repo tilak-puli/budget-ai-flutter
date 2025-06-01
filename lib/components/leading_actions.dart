@@ -1,5 +1,5 @@
-import 'package:budget_ai/theme/index.dart';
-import 'package:budget_ai/utils/time.dart';
+import 'package:coin_master_ai/theme/index.dart';
+import 'package:coin_master_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
@@ -42,7 +42,9 @@ class LeadingActions extends StatelessWidget {
 
     return Container(
       constraints: const BoxConstraints(
-          minWidth: 100, maxWidth: 150), // Dynamic constraints for flexibility
+        minWidth: 100,
+        maxWidth: 150,
+      ), // Dynamic constraints for flexibility
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -70,8 +72,10 @@ class LeadingActions extends StatelessWidget {
             }
           },
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -142,7 +146,7 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
     // Current selected month display
@@ -193,12 +197,15 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
             children: [
               DropdownButton<int>(
                 value: selectedYear,
-                items: List.generate(6, (index) => selectedYear - 2 + index)
-                    .map((year) => DropdownMenuItem(
-                          value: year,
-                          child: Text('$year'),
-                        ))
-                    .toList(),
+                items:
+                    List.generate(6, (index) => selectedYear - 2 + index)
+                        .map(
+                          (year) => DropdownMenuItem(
+                            value: year,
+                            child: Text('$year'),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (year) {
                   if (year != null) {
                     setState(() {
@@ -298,12 +305,7 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text(
-                  'CANCEL',
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
+                child: Text('CANCEL', style: TextStyle(color: Colors.grey)),
               ),
               TextButton(
                 onPressed: () {

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:budget_ai/models/budget.dart';
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/models/expense_list.dart';
-import 'package:budget_ai/state/budget_store.dart';
-import 'package:budget_ai/models/app_init_response.dart';
+import 'package:coin_master_ai/models/budget.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/models/expense_list.dart';
+import 'package:coin_master_ai/state/budget_store.dart';
+import 'package:coin_master_ai/models/app_init_response.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +57,8 @@ class ExpenseStore extends ChangeNotifier {
     fromDate = initData.dateRange.fromDate;
     toDate = initData.dateRange.toDate;
     print(
-        "Date range set: ${fromDate?.toIso8601String()} to ${toDate?.toIso8601String()}");
+      "Date range set: ${fromDate?.toIso8601String()} to ${toDate?.toIso8601String()}",
+    );
 
     print("------- EXPENSE STORE INITIALIZATION COMPLETE -------\n");
     notifyListeners();
@@ -82,14 +83,17 @@ class ExpenseStore extends ChangeNotifier {
     sortedServerExpenses.sort((a, b) => b.datetime.compareTo(a.datetime));
 
     print(
-        "Replacing local expenses with ${sortedServerExpenses.length} server expenses");
+      "Replacing local expenses with ${sortedServerExpenses.length} server expenses",
+    );
 
     // Log a few server expenses
     if (sortedServerExpenses.isNotEmpty) {
       final sampleExpenses = sortedServerExpenses
           .take(min(3, sortedServerExpenses.length))
-          .map((e) =>
-              "ID: ${e.id}, Date: ${e.datetime.toIso8601String()}, Amount: ${e.amount}, Category: ${e.category}")
+          .map(
+            (e) =>
+                "ID: ${e.id}, Date: ${e.datetime.toIso8601String()}, Amount: ${e.amount}, Category: ${e.category}",
+          )
           .join("\n");
       print("Sample server expenses:\n$sampleExpenses");
     }
@@ -149,12 +153,18 @@ class ExpenseStore extends ChangeNotifier {
       if (context != null) {
         final budgetStore = Provider.of<BudgetStore>(context, listen: false);
         budgetStore.updateBudgetForExpenseChange(
-            newExpense.amount, newExpense.category,
-            isUpdate: true, oldAmount: oldExpense.amount);
+          newExpense.amount,
+          newExpense.category,
+          isUpdate: true,
+          oldAmount: oldExpense.amount,
+        );
       } else if (_budgetStore != null) {
         _budgetStore!.updateBudgetForExpenseChange(
-            newExpense.amount, newExpense.category,
-            isUpdate: true, oldAmount: oldExpense.amount);
+          newExpense.amount,
+          newExpense.category,
+          isUpdate: true,
+          oldAmount: oldExpense.amount,
+        );
       }
     }
 
@@ -180,12 +190,18 @@ class ExpenseStore extends ChangeNotifier {
       if (context != null) {
         final budgetStore = Provider.of<BudgetStore>(context, listen: false);
         budgetStore.updateBudgetForExpenseChange(
-            expense.amount, expense.category,
-            isUpdate: true, oldAmount: oldExpense.amount);
+          expense.amount,
+          expense.category,
+          isUpdate: true,
+          oldAmount: oldExpense.amount,
+        );
       } else if (_budgetStore != null) {
         _budgetStore!.updateBudgetForExpenseChange(
-            expense.amount, expense.category,
-            isUpdate: true, oldAmount: oldExpense.amount);
+          expense.amount,
+          expense.category,
+          isUpdate: true,
+          oldAmount: oldExpense.amount,
+        );
       }
     } else {
       // Add new expense
@@ -195,10 +211,14 @@ class ExpenseStore extends ChangeNotifier {
       if (context != null) {
         final budgetStore = Provider.of<BudgetStore>(context, listen: false);
         budgetStore.updateBudgetForExpenseChange(
-            expense.amount, expense.category);
+          expense.amount,
+          expense.category,
+        );
       } else if (_budgetStore != null) {
-        _budgetStore!
-            .updateBudgetForExpenseChange(expense.amount, expense.category);
+        _budgetStore!.updateBudgetForExpenseChange(
+          expense.amount,
+          expense.category,
+        );
       }
     }
 

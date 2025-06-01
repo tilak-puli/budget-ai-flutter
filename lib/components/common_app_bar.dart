@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/theme/index.dart';
 
 /// A common app bar used across the app for consistent styling
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -25,9 +25,10 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Use purple/blue background color based on app theme
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkPurpleBackground
-        : NeumorphicColors.lightPurpleBackground;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkPurpleBackground
+            : NeumorphicColors.lightPurpleBackground;
 
     // Text color is white on the colored background
     final textColor = Colors.white;
@@ -56,13 +57,11 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
+          color: textColor,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     );
   }
 

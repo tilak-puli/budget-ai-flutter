@@ -1,16 +1,16 @@
-import 'package:budget_ai/services/budget_service.dart';
-import 'package:budget_ai/services/subscription_service.dart';
-import 'package:budget_ai/services/app_init_service.dart';
+import 'package:coin_master_ai/services/budget_service.dart';
+import 'package:coin_master_ai/services/subscription_service.dart';
+import 'package:coin_master_ai/services/app_init_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
-import 'package:budget_ai/models/app_init_response.dart';
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/state/budget_store.dart';
-import 'package:budget_ai/state/expense_store.dart';
-import 'package:budget_ai/state/chat_store.dart';
+import 'package:coin_master_ai/models/app_init_response.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/state/budget_store.dart';
+import 'package:coin_master_ai/state/expense_store.dart';
+import 'package:coin_master_ai/state/chat_store.dart';
 
 // Base API constants
 const host = "backend-2xqnus4dqq-uc.a.run.app";
@@ -60,7 +60,9 @@ class InitializationService {
 
       // Use the AppInitService to fetch unified data
       final result = await _appInitService.fetchAppInitData(
-          fromDate: fromDate, toDate: toDate);
+        fromDate: fromDate,
+        toDate: toDate,
+      );
 
       if (result != null) {
         _appInitData = result;
@@ -73,12 +75,10 @@ class InitializationService {
         return true;
       } else {
         // If the unified API fails, fall back to the existing methods
-        developer
-            .log('Unified API failed, falling back to individual API calls');
-        await Future.wait([
-          _prefetchBudgetData(),
-          _prefetchQuotaData(),
-        ]);
+        developer.log(
+          'Unified API failed, falling back to individual API calls',
+        );
+        await Future.wait([_prefetchBudgetData(), _prefetchQuotaData()]);
 
         _initialized = true;
         return true;
@@ -102,7 +102,7 @@ class InitializationService {
         'budget': data.budget.budget!.toJson(),
         'categories': data.budget.categories,
         'budgetExists': data.budget.budgetExists,
-        'lastUpdated': DateTime.now().toIso8601String()
+        'lastUpdated': DateTime.now().toIso8601String(),
       };
       await storeBudgetDataInStorage(budgetData);
     }
@@ -115,7 +115,7 @@ class InitializationService {
       'dailyLimit': data.quota.dailyLimit,
       'standardLimit': data.quota.standardLimit,
       'premiumLimit': data.quota.premiumLimit,
-      'lastUpdated': DateTime.now().toIso8601String()
+      'lastUpdated': DateTime.now().toIso8601String(),
     };
     await _storeSubscriptionDataInStorage(subscriptionData);
 
@@ -161,7 +161,8 @@ class InitializationService {
 
   // Store subscription data in shared preferences
   Future<void> _storeSubscriptionDataInStorage(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('subscription_data', json.encode(data));
@@ -192,18 +193,21 @@ class InitializationService {
         'totalBudget': summary.totalBudget,
         'totalSpending': summary.totalSpending,
         'remainingBudget': summary.remainingBudget,
-        'categories': summary.categories
-            .map((e) => {
-                  'category': e.category,
-                  'budget': e.budget,
-                  'actual': e.actual,
-                  'remaining': e.remaining
-                })
-            .toList(),
+        'categories':
+            summary.categories
+                .map(
+                  (e) => {
+                    'category': e.category,
+                    'budget': e.budget,
+                    'actual': e.actual,
+                    'remaining': e.remaining,
+                  },
+                )
+                .toList(),
         'month': summary.month,
         'year': summary.year,
         'budgetExists': summary.budgetExists,
-        'lastUpdated': DateTime.now().toIso8601String()
+        'lastUpdated': DateTime.now().toIso8601String(),
       };
       await prefs.setString(summaryKey, json.encode(summaryData));
       developer.log('Budget summary stored in local storage');
@@ -322,8 +326,11 @@ class InitializationService {
   }
 
   // Initialize all stores with app init data
-  Future<void> initializeStores(BudgetStore budgetStore,
-      ExpenseStore expenseStore, ChatStore? chatStore) async {
+  Future<void> initializeStores(
+    BudgetStore budgetStore,
+    ExpenseStore expenseStore,
+    ChatStore? chatStore,
+  ) async {
     developer.log('Initializing all stores from app init data');
 
     // Check if we have cached app init data

@@ -1,10 +1,10 @@
-import 'package:budget_ai/pages/homepage.dart';
-import 'package:budget_ai/pages/login.dart';
-import 'package:budget_ai/services/initialization_service.dart';
-import 'package:budget_ai/services/app_init_service.dart';
-import 'package:budget_ai/state/budget_store.dart';
-import 'package:budget_ai/state/expense_store.dart';
-import 'package:budget_ai/state/chat_store.dart';
+import 'package:coin_master_ai/pages/homepage.dart';
+import 'package:coin_master_ai/pages/login.dart';
+import 'package:coin_master_ai/services/initialization_service.dart';
+import 'package:coin_master_ai/services/app_init_service.dart';
+import 'package:coin_master_ai/state/budget_store.dart';
+import 'package:coin_master_ai/state/expense_store.dart';
+import 'package:coin_master_ai/state/chat_store.dart';
 import 'package:firebase_auth/firebase_auth.dart'
     hide PhoneAuthProvider, GoogleAuthProvider;
 import 'package:flutter/material.dart';

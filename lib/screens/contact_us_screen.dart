@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:budget_ai/components/common_app_bar.dart';
+import 'package:coin_master_ai/components/common_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContactUsScreen extends StatelessWidget {
@@ -35,15 +35,12 @@ class ContactUsScreen extends StatelessWidget {
           children: [
             Text(
               'About Budget AI',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Text(
-              _appDescription,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            Text(_appDescription, style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 32),
             Text(
               'Contact Email:',
@@ -55,9 +52,9 @@ class ContactUsScreen extends StatelessWidget {
               child: Text(
                 _email,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
+                  color: Theme.of(context).colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ],

@@ -1,20 +1,16 @@
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/theme/index.dart';
-import 'package:budget_ai/utils/time.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/theme/index.dart';
+import 'package:coin_master_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:budget_ai/state/budget_store.dart';
+import 'package:coin_master_ai/state/budget_store.dart';
 
 class ExpenseForm extends StatefulWidget {
   final Expense expense;
   final Future<void> Function(Expense) updateExpense;
 
-  const ExpenseForm(
-    this.expense,
-    this.updateExpense, {
-    super.key,
-  });
+  const ExpenseForm(this.expense, this.updateExpense, {super.key});
 
   @override
   ExpenseFormState createState() => ExpenseFormState();
@@ -55,12 +51,14 @@ class ExpenseFormState extends State<ExpenseForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
-    final hintColor = isDark
-        ? NeumorphicColors.darkTextSecondary
-        : NeumorphicColors.lightTextSecondary;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
+    final hintColor =
+        isDark
+            ? NeumorphicColors.darkTextSecondary
+            : NeumorphicColors.lightTextSecondary;
     final borderColor =
         isDark ? Colors.grey.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
     final fillColor =
@@ -79,10 +77,7 @@ class ExpenseFormState extends State<ExpenseForm> {
       fontWeight: FontWeight.w500,
     );
 
-    final inputTextStyle = TextStyle(
-      fontSize: 16,
-      color: textColor,
-    );
+    final inputTextStyle = TextStyle(fontSize: 16, color: textColor);
 
     // Clean minimal input decoration
     final inputDecoration = InputDecoration(
@@ -109,10 +104,7 @@ class ExpenseFormState extends State<ExpenseForm> {
         borderRadius: BorderRadius.circular(8.0),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.redAccent,
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: Colors.redAccent, width: 1.5),
         borderRadius: BorderRadius.circular(8.0),
       ),
       contentPadding: const EdgeInsets.symmetric(
@@ -128,10 +120,7 @@ class ExpenseFormState extends State<ExpenseForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Description field
-          Text(
-            'Description',
-            style: labelTextStyle,
-          ),
+          Text('Description', style: labelTextStyle),
           const SizedBox(height: 8),
           TextFormField(
             onSaved: (value) {
@@ -156,10 +145,7 @@ class ExpenseFormState extends State<ExpenseForm> {
           const SizedBox(height: 24),
 
           // Amount field
-          Text(
-            'Amount',
-            style: labelTextStyle,
-          ),
+          Text('Amount', style: labelTextStyle),
           const SizedBox(height: 8),
           TextFormField(
             onSaved: (value) {
@@ -186,10 +172,7 @@ class ExpenseFormState extends State<ExpenseForm> {
           const SizedBox(height: 24),
 
           // Category field
-          Text(
-            'Category',
-            style: labelTextStyle,
-          ),
+          Text('Category', style: labelTextStyle),
           const SizedBox(height: 8),
           DropdownButtonFormField(
             onSaved: (value) {
@@ -201,27 +184,26 @@ class ExpenseFormState extends State<ExpenseForm> {
               prefixIcon: Icon(Icons.category_outlined, color: hintColor),
             ),
             style: inputTextStyle,
-            dropdownColor: isDark
-                ? NeumorphicColors.darkCardBackground
-                : NeumorphicColors.lightCardBackground,
+            dropdownColor:
+                isDark
+                    ? NeumorphicColors.darkCardBackground
+                    : NeumorphicColors.lightCardBackground,
             isExpanded: true,
             value: widget.expense.category,
-            items: allCategories.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
+            items:
+                allCategories.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
             onChanged: (String? value) {},
           ),
 
           const SizedBox(height: 24),
 
           // Date field
-          Text(
-            'Date',
-            style: labelTextStyle,
-          ),
+          Text('Date', style: labelTextStyle),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -244,10 +226,11 @@ class ExpenseFormState extends State<ExpenseForm> {
                       return Theme(
                         data: Theme.of(context).copyWith(
                           colorScheme: Theme.of(context).colorScheme.copyWith(
-                                surface: isDark
+                            surface:
+                                isDark
                                     ? NeumorphicColors.darkCardBackground
                                     : NeumorphicColors.lightCardBackground,
-                              ),
+                          ),
                         ),
                         child: child!,
                       );
@@ -278,10 +261,7 @@ class ExpenseFormState extends State<ExpenseForm> {
                       ),
                       Padding(
                         padding: const EdgeInsets.only(right: 12.0),
-                        child: Icon(
-                          Icons.arrow_drop_down,
-                          color: hintColor,
-                        ),
+                        child: Icon(Icons.arrow_drop_down, color: hintColor),
                       ),
                     ],
                   ),
@@ -308,7 +288,7 @@ class ExpenseFormState extends State<ExpenseForm> {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';

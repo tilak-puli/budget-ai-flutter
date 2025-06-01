@@ -1,12 +1,9 @@
 import 'dart:math' as math;
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 
 class TypingIndicator extends StatefulWidget {
-  const TypingIndicator({
-    super.key,
-    this.showIndicator = false,
-  });
+  const TypingIndicator({super.key, this.showIndicator = false});
 
   final bool showIndicator;
 
@@ -33,20 +30,15 @@ class _TypingIndicatorState extends State<TypingIndicator>
   void initState() {
     super.initState();
 
-    _appearanceController = AnimationController(
-      vsync: this,
-    )..addListener(() {
-        setState(() {});
-      });
+    _appearanceController = AnimationController(vsync: this)..addListener(() {
+      setState(() {});
+    });
 
     _indicatorSpaceAnimation = CurvedAnimation(
       parent: _appearanceController,
       curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
       reverseCurve: const Interval(0.0, 1.0, curve: Curves.easeOut),
-    ).drive(Tween<double>(
-      begin: 0.0,
-      end: 60.0,
-    ));
+    ).drive(Tween<double>(begin: 0.0, end: 60.0));
 
     _smallBubbleAnimation = CurvedAnimation(
       parent: _appearanceController,
@@ -111,9 +103,10 @@ class _TypingIndicatorState extends State<TypingIndicator>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkPrimaryBackground
-        : NeumorphicColors.lightPrimaryBackground;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkPrimaryBackground
+            : NeumorphicColors.lightPrimaryBackground;
     final bubbleColor =
         isDark ? NeumorphicColors.darkCardBackground : Colors.white;
     final dotDarkColor = isDark ? Colors.grey[600]! : const Color(0xFF333333);
@@ -142,19 +135,13 @@ class _TypingIndicatorState extends State<TypingIndicator>
               animation: _smallBubbleAnimation,
               left: 8,
               bottom: 8,
-              bubble: CircleBubble(
-                size: 8,
-                bubbleColor: bubbleColor,
-              ),
+              bubble: CircleBubble(size: 8, bubbleColor: bubbleColor),
             ),
             AnimatedBubble(
               animation: _mediumBubbleAnimation,
               left: 10,
               bottom: 10,
-              bubble: CircleBubble(
-                size: 10,
-                bubbleColor: bubbleColor,
-              ),
+              bubble: CircleBubble(size: 10, bubbleColor: bubbleColor),
             ),
             AnimatedBubble(
               animation: _largeBubbleAnimation,
@@ -190,10 +177,7 @@ class CircleBubble extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: bubbleColor,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: bubbleColor),
     );
   }
 }
@@ -332,10 +316,7 @@ class FlashingCircle extends StatelessWidget {
 }
 
 class FakeMessage extends StatelessWidget {
-  const FakeMessage({
-    super.key,
-    required this.isBig,
-  });
+  const FakeMessage({super.key, required this.isBig});
 
   final bool isBig;
 

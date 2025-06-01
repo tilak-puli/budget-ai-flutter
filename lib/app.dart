@@ -1,6 +1,6 @@
-import 'package:budget_ai/auth_gate.dart';
-import 'package:budget_ai/state/chat_store.dart';
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/auth_gate.dart';
+import 'package:coin_master_ai/state/chat_store.dart';
+import 'package:coin_master_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';

@@ -15,7 +15,7 @@ plugins {
 }
 
 android {
-    namespace = "com.tilakpuli.budget_ai"
+    namespace = "com.tilakpuli.coin_master_ai"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.2.12479018"
 
@@ -31,7 +31,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.tilakpuli.budget_ai"
+        applicationId = "com.tilakpuli.coin_master_ai"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23

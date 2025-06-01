@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:budget_ai/models/app_init_response.dart';
-import 'package:budget_ai/models/expense_list.dart';
-import 'package:budget_ai/models/expense.dart';
+import 'package:coin_master_ai/models/app_init_response.dart';
+import 'package:coin_master_ai/models/expense_list.dart';
+import 'package:coin_master_ai/models/expense.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:developer' as developer;
@@ -33,13 +33,18 @@ class AppInitService {
 
     return {
       'Content-Type': 'application/json; charset=UTF-8',
-      'Authorization': 'Bearer $token'
+      'Authorization': 'Bearer $token',
     };
   }
 
   // Helper method to log requests and responses
-  Future<http.Response> _makeRequest(String method, Uri url,
-      Map<String, String> headers, String? body, String operationName) async {
+  Future<http.Response> _makeRequest(
+    String method,
+    Uri url,
+    Map<String, String> headers,
+    String? body,
+    String operationName,
+  ) async {
     try {
       developer.log("\n------- $operationName API CALL [$method] -------");
       developer.log("URL: $url");
@@ -63,7 +68,8 @@ class AppInitService {
 
       developer.log("Response status: ${response.statusCode}");
       developer.log(
-          "Response body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}...");
+        "Response body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}...",
+      );
       developer.log("------- END $operationName API CALL -------\n");
 
       return response;
@@ -75,8 +81,11 @@ class AppInitService {
   }
 
   // Fetch app initialization data
-  Future<AppInitResponse?> fetchAppInitData(
-      {DateTime? fromDate, DateTime? toDate, bool forceRefresh = false}) async {
+  Future<AppInitResponse?> fetchAppInitData({
+    DateTime? fromDate,
+    DateTime? toDate,
+    bool forceRefresh = false,
+  }) async {
     // Check for cached data first if not forcing refresh
     if (!forceRefresh && _cachedData != null) {
       developer.log('Using cached app init data');
@@ -94,8 +103,9 @@ class AppInitService {
           final lastUpdateTime = DateTime.parse(lastUpdated);
           final now = DateTime.now();
           if (now.difference(lastUpdateTime).inMinutes < 60) {
-            developer
-                .log('App init data is fresh, using cached data from storage');
+            developer.log(
+              'App init data is fresh, using cached data from storage',
+            );
             try {
               _cachedData = AppInitResponse.fromJson(storageData['data'] ?? {});
               return _cachedData;
@@ -122,8 +132,13 @@ class AppInitService {
       final headers = await _getHeaders();
 
       developer.log('Calling unified app init API: $uri');
-      final response =
-          await _makeRequest('GET', uri, headers, null, 'APP_INIT');
+      final response = await _makeRequest(
+        'GET',
+        uri,
+        headers,
+        null,
+        'APP_INIT',
+      );
 
       if (response.statusCode == 200) {
         try {
@@ -134,7 +149,7 @@ class AppInitService {
           // Store the raw response in shared preferences with timestamp
           final storageData = {
             'data': data,
-            'lastUpdated': DateTime.now().toIso8601String()
+            'lastUpdated': DateTime.now().toIso8601String(),
           };
           await storeAppInitDataInStorage(storageData);
 
@@ -146,7 +161,8 @@ class AppInitService {
         }
       } else {
         developer.log(
-            'App init API error: ${response.statusCode} - ${response.body}');
+          'App init API error: ${response.statusCode} - ${response.body}',
+        );
         return null;
       }
     } catch (e) {

@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.tilakpuli" "\0"
-            VALUE "FileDescription", "budget_ai" "\0"
+            VALUE "FileDescription", "coin_master_ai" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "budget_ai" "\0"
+            VALUE "InternalName", "coin_master_ai" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 com.tilakpuli. All rights reserved." "\0"
-            VALUE "OriginalFilename", "budget_ai.exe" "\0"
-            VALUE "ProductName", "budget_ai" "\0"
+            VALUE "OriginalFilename", "coin_master_ai.exe" "\0"
+            VALUE "ProductName", "coin_master_ai" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

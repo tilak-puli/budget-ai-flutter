@@ -1,11 +1,11 @@
-import 'package:budget_ai/services/app_init_service.dart';
-import 'package:budget_ai/services/subscription_service.dart';
+import 'package:coin_master_ai/services/app_init_service.dart';
+import 'package:coin_master_ai/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:budget_ai/theme/neumorphic_box.dart';
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/theme/neumorphic_box.dart';
+import 'package:coin_master_ai/theme/index.dart';
 import 'package:intl/intl.dart';
-import 'package:budget_ai/components/common_app_bar.dart';
+import 'package:coin_master_ai/components/common_app_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -78,7 +78,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
       if (quota != null) {
         remainingMessages = quota['remainingQuota'] ?? 0;
-        dailyLimit = quota['dailyLimit'] ??
+        dailyLimit =
+            quota['dailyLimit'] ??
             (isPremium ? _premiumMessageLimit : _freeMessageLimit);
       }
 
@@ -159,9 +160,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     // Show confirmation
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Purchases restored')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Purchases restored')));
     }
   }
 
@@ -201,162 +202,178 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Current Status
-                    Container(
-                      decoration: NeumorphicBox.cardDecoration(
-                        context: context,
-                        borderRadius: 16.0,
-                        depth: 5.0,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isPremium ? 'Premium Account' : 'Free Account',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: _isPremium ? Colors.amber : null),
-                            ),
-                            const SizedBox(height: 8),
-                            if (!_isPremium) ...[
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Current Status
+                      Container(
+                        decoration: NeumorphicBox.cardDecoration(
+                          context: context,
+                          borderRadius: 16.0,
+                          depth: 5.0,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                'You have $_remainingMessages/${_dailyMessageLimit} free messages remaining today.',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Upgrade to Premium for unlimited messages!',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ] else ...[
-                              Text(
-                                'You have $_remainingMessages/${_dailyMessageLimit} premium messages remaining.',
-                                style: TextStyle(fontSize: 16),
+                                _isPremium ? 'Premium Account' : 'Free Account',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: _isPremium ? Colors.amber : null,
+                                ),
                               ),
                               const SizedBox(height: 8),
-                              if (_expiryDate != null) ...[
+                              if (!_isPremium) ...[
                                 Text(
-                                  'Subscription expires: $_expiryDate',
-                                  style: TextStyle(fontSize: 14),
+                                  'You have $_remainingMessages/${_dailyMessageLimit} free messages remaining today.',
+                                  style: Theme.of(context).textTheme.bodyLarge,
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Upgrade to Premium for unlimited messages!',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ] else ...[
                                 Text(
-                                  'Auto-renewing: ${_autoRenewing == true ? 'Yes' : 'No'}',
-                                  style: TextStyle(fontSize: 14),
+                                  'You have $_remainingMessages/${_dailyMessageLimit} premium messages remaining.',
+                                  style: TextStyle(fontSize: 16),
                                 ),
+                                const SizedBox(height: 8),
+                                if (_expiryDate != null) ...[
+                                  Text(
+                                    'Subscription expires: $_expiryDate',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Auto-renewing: ${_autoRenewing == true ? 'Yes' : 'No'}',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                ],
                               ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Features Section
-                    Text(
-                      'Premium Features',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildFeatureItem(Icons.message, '100 AI Messages per day'),
-                    _buildFeatureItem(Icons.analytics_outlined,
-                        'AI-Powered Weekly Reports [coming soon]'),
-                    _buildFeatureItem(Icons.lightbulb_outline,
-                        'Smart Savings Suggestions [coming soon]'),
-                    _buildFeatureItem(
-                        Icons.file_download, 'Data Export [coming soon]'),
-
-                    const SizedBox(height: 24),
-
-                    // Subscription Options
-                    if (!_isPremium) ...[
+                      // Features Section
                       Text(
-                        'Subscription Options',
+                        'Premium Features',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 16),
-                      if (_products.isEmpty)
-                        Container(
-                          decoration: NeumorphicBox.cardDecoration(
-                            context: context,
-                            borderRadius: 16.0,
-                            depth: 3.0,
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                                'No subscription options available at the moment.'),
-                          ),
-                        )
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _products.length,
-                          itemBuilder: (context, index) {
-                            final product = _products[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: NeumorphicBox.cardDecoration(
-                                context: context,
-                                borderRadius: 12.0,
-                                depth: 4.0,
+                      _buildFeatureItem(
+                        Icons.message,
+                        '100 AI Messages per day',
+                      ),
+                      _buildFeatureItem(
+                        Icons.analytics_outlined,
+                        'AI-Powered Weekly Reports [coming soon]',
+                      ),
+                      _buildFeatureItem(
+                        Icons.lightbulb_outline,
+                        'Smart Savings Suggestions [coming soon]',
+                      ),
+                      _buildFeatureItem(
+                        Icons.file_download,
+                        'Data Export [coming soon]',
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Subscription Options
+                      if (!_isPremium) ...[
+                        Text(
+                          'Subscription Options',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 16),
+                        if (_products.isEmpty)
+                          Container(
+                            decoration: NeumorphicBox.cardDecoration(
+                              context: context,
+                              borderRadius: 16.0,
+                              depth: 3.0,
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                'No subscription options available at the moment.',
                               ),
-                              child: ListTile(
-                                title: Text(_cleanProductTitle(product.title)),
-                                subtitle: product.description.isNotEmpty
-                                    ? Text(product.description)
-                                    : null,
-                                trailing: Container(
-                                  decoration: NeumorphicBox.buttonDecoration(
-                                    context: context,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    borderRadius: 8.0,
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _products.length,
+                            itemBuilder: (context, index) {
+                              final product = _products[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: NeumorphicBox.cardDecoration(
+                                  context: context,
+                                  borderRadius: 12.0,
+                                  depth: 4.0,
+                                ),
+                                child: ListTile(
+                                  title: Text(
+                                    _cleanProductTitle(product.title),
                                   ),
-                                  child: InkWell(
-                                    onTap: () => _purchaseSubscription(product),
-                                    borderRadius: BorderRadius.circular(8.0),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0,
-                                        vertical: 8.0,
-                                      ),
-                                      child: Text(
-                                        product.price,
-                                        style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
-                                          fontWeight: FontWeight.bold,
+                                  subtitle:
+                                      product.description.isNotEmpty
+                                          ? Text(product.description)
+                                          : null,
+                                  trailing: Container(
+                                    decoration: NeumorphicBox.buttonDecoration(
+                                      context: context,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      borderRadius: 8.0,
+                                    ),
+                                    child: InkWell(
+                                      onTap:
+                                          () => _purchaseSubscription(product),
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16.0,
+                                          vertical: 8.0,
+                                        ),
+                                        child: Text(
+                                          product.price,
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 

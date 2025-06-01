@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:budget_ai/theme/neumorphic_colors.dart';
+import 'package:coin_master_ai/theme/neumorphic_colors.dart';
 
 /// Neumorphic Box Decoration helper for Coin Master AI
 /// Implements consistent shadow styles based on the Neumorphism 2.0 design specification
@@ -21,18 +21,21 @@ class NeumorphicBox {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Determine colors based on theme
-    final baseColor = color ??
+    final baseColor =
+        color ??
         (isDark
             ? NeumorphicColors.darkPrimaryBackground
             : NeumorphicColors.lightPrimaryBackground);
 
-    final lightShadowColor = isDark
-        ? NeumorphicColors.darkShadowLight
-        : NeumorphicColors.lightShadowLight;
+    final lightShadowColor =
+        isDark
+            ? NeumorphicColors.darkShadowLight
+            : NeumorphicColors.lightShadowLight;
 
-    final darkShadowColor = isDark
-        ? NeumorphicColors.darkShadowDark
-        : NeumorphicColors.lightShadowDark;
+    final darkShadowColor =
+        isDark
+            ? NeumorphicColors.darkShadowDark
+            : NeumorphicColors.lightShadowDark;
 
     // Default light source is top-left per design spec
     final source = lightSource ?? defaultLightSource;

@@ -1,7 +1,7 @@
-import 'package:budget_ai/components/expense_card.dart';
-import 'package:budget_ai/components/typing_indicator.dart';
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/components/expense_card.dart';
+import 'package:coin_master_ai/components/typing_indicator.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/theme/index.dart';
 import 'package:flutter/material.dart';
 
 class ChatStore extends ChangeNotifier {
@@ -71,30 +71,38 @@ class TextMessage extends ChatMessage {
 
   @override
   Widget render() {
-    final isDark = GlobalKey().currentContext != null
-        ? Theme.of(GlobalKey().currentContext!).brightness == Brightness.dark
-        : (GlobalContext.context != null
-            ? Theme.of(GlobalContext.context).brightness == Brightness.dark
-            : false);
+    final isDark =
+        GlobalKey().currentContext != null
+            ? Theme.of(GlobalKey().currentContext!).brightness ==
+                Brightness.dark
+            : (GlobalContext.context != null
+                ? Theme.of(GlobalContext.context).brightness == Brightness.dark
+                : false);
 
     // User messages use accent color in light/dark modes, AI messages match card background
-    final messageColor = isUserMessage
-        ? isDark
-            ? NeumorphicColors
-                .darkAccent // Blue accent for user messages in dark mode
-            : NeumorphicColors.lightAccent
-                .withOpacity(0.15) // Light blue background for user messages
-        : isDark
+    final messageColor =
+        isUserMessage
+            ? isDark
+                ? NeumorphicColors
+                    .darkAccent // Blue accent for user messages in dark mode
+                : NeumorphicColors.lightAccent.withOpacity(
+                  0.15,
+                ) // Light blue background for user messages
+            : isDark
             ? NeumorphicColors.darkCardBackground
             : Colors.white;
 
     // Text color based on background contrast
-    final textColor = isUserMessage
-        ? isDark
-            ? Colors.white // White text on dark blue background
-            : NeumorphicColors.lightTextPrimary // Blue text on light background
-        : isDark
-            ? Colors.white // White text on dark cards
+    final textColor =
+        isUserMessage
+            ? isDark
+                ? Colors
+                    .white // White text on dark blue background
+                : NeumorphicColors
+                    .lightTextPrimary // Blue text on light background
+            : isDark
+            ? Colors
+                .white // White text on dark cards
             : NeumorphicColors
                 .lightTextPrimary; // Dark text on light backgrounds
 
@@ -110,13 +118,7 @@ class TextMessage extends ChatMessage {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 16,
-              color: textColor,
-            ),
-          ),
+          child: Text(text, style: TextStyle(fontSize: 16, color: textColor)),
         ),
       ),
     );
@@ -130,11 +132,13 @@ class ExpenseMessage extends ChatMessage {
 
   @override
   Widget render() {
-    final isDark = GlobalKey().currentContext != null
-        ? Theme.of(GlobalKey().currentContext!).brightness == Brightness.dark
-        : (GlobalContext.context != null
-            ? Theme.of(GlobalContext.context).brightness == Brightness.dark
-            : false);
+    final isDark =
+        GlobalKey().currentContext != null
+            ? Theme.of(GlobalKey().currentContext!).brightness ==
+                Brightness.dark
+            : (GlobalContext.context != null
+                ? Theme.of(GlobalContext.context).brightness == Brightness.dark
+                : false);
 
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 6.0),
@@ -148,10 +152,7 @@ class ExpenseMessage extends ChatMessage {
         ),
         child: Padding(
           padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
-          child: ExpenseCard(
-            expense,
-            inChatMessage: true,
-          ),
+          child: ExpenseCard(expense, inChatMessage: true),
         ),
       ),
     );
@@ -187,8 +188,9 @@ class ChatHistory {
   }
 
   void update(String expenseId, ChatMessage updated) {
-    var messageIndex =
-        messages.indexWhere((element) => element.expenseId == expenseId);
+    var messageIndex = messages.indexWhere(
+      (element) => element.expenseId == expenseId,
+    );
 
     if (messageIndex != -1) {
       messages[messageIndex] = updated;

@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:budget_ai/api.dart';
-import 'package:budget_ai/models/expense.dart';
-import 'package:budget_ai/theme/index.dart';
-import 'package:budget_ai/utils/time.dart';
+import 'package:coin_master_ai/api.dart';
+import 'package:coin_master_ai/models/expense.dart';
+import 'package:coin_master_ai/theme/index.dart';
+import 'package:coin_master_ai/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
@@ -34,7 +34,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
     'Entertainment',
     'Health',
     'Bills',
-    'Other'
+    'Other',
   ];
 
   @override
@@ -67,7 +67,8 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
           if (permission == LocationPermission.whileInUse ||
               permission == LocationPermission.always) {
             final position = await Geolocator.getCurrentPosition(
-                desiredAccuracy: LocationAccuracy.high);
+              desiredAccuracy: LocationAccuracy.high,
+            );
             latitude = position.latitude;
             longitude = position.longitude;
           }
@@ -120,15 +121,15 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
           // Handle error
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content:
-                    Text('Error: ${response.statusCode} - ${response.body}')),
+              content: Text('Error: ${response.statusCode} - ${response.body}'),
+            ),
           );
         }
       } catch (e) {
         // Handle error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating expense: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating expense: $e')));
       } finally {
         setState(() {
           _isLoading = false;
@@ -140,15 +141,18 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
-    final hintColor = isDark
-        ? NeumorphicColors.darkTextSecondary
-        : NeumorphicColors.lightTextSecondary;
-    final backgroundColor = isDark
-        ? NeumorphicColors.darkPrimaryBackground
-        : NeumorphicColors.lightPrimaryBackground;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
+    final hintColor =
+        isDark
+            ? NeumorphicColors.darkTextSecondary
+            : NeumorphicColors.lightTextSecondary;
+    final backgroundColor =
+        isDark
+            ? NeumorphicColors.darkPrimaryBackground
+            : NeumorphicColors.lightPrimaryBackground;
     final accentColor =
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
     final borderColor =
@@ -163,10 +167,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
       fontWeight: FontWeight.w500,
     );
 
-    final inputTextStyle = TextStyle(
-      fontSize: 16,
-      color: textColor,
-    );
+    final inputTextStyle = TextStyle(fontSize: 16, color: textColor);
 
     // Section title style
     final sectionTitleStyle = TextStyle(
@@ -186,10 +187,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
         borderRadius: BorderRadius.circular(8.0),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: accentColor.withOpacity(0.8),
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: accentColor.withOpacity(0.8), width: 1.5),
         borderRadius: BorderRadius.circular(8.0),
       ),
       errorBorder: OutlineInputBorder(
@@ -200,10 +198,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
         borderRadius: BorderRadius.circular(8.0),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.redAccent,
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: Colors.redAccent, width: 1.5),
         borderRadius: BorderRadius.circular(8.0),
       ),
       contentPadding: const EdgeInsets.symmetric(
@@ -217,10 +212,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
       appBar: AppBar(
         title: Text(
           'Create Expense',
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
         ),
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -240,27 +232,23 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Transaction Details',
-                          style: sectionTitleStyle,
-                        ),
+                        Text('Transaction Details', style: sectionTitleStyle),
                         const SizedBox(height: 24),
 
                         // Description field
                         Row(
                           children: [
-                            Text(
-                              'Description',
-                              style: labelTextStyle,
-                            ),
+                            Text('Description', style: labelTextStyle),
                           ],
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           decoration: inputDecoration.copyWith(
                             hintText: "Enter description",
-                            prefixIcon: Icon(Icons.description_outlined,
-                                color: hintColor),
+                            prefixIcon: Icon(
+                              Icons.description_outlined,
+                              color: hintColor,
+                            ),
                           ),
                           style: inputTextStyle,
                           autofocus: true,
@@ -281,25 +269,20 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                         const SizedBox(height: 24),
 
                         // Amount field
-                        Row(
-                          children: [
-                            Text(
-                              'Amount',
-                              style: labelTextStyle,
-                            ),
-                          ],
-                        ),
+                        Row(children: [Text('Amount', style: labelTextStyle)]),
                         const SizedBox(height: 8),
                         TextFormField(
                           decoration: inputDecoration.copyWith(
                             hintText: "Enter amount",
-                            prefixIcon:
-                                Icon(Icons.attach_money, color: hintColor),
+                            prefixIcon: Icon(
+                              Icons.attach_money,
+                              color: hintColor,
+                            ),
                           ),
                           style: inputTextStyle,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
+                            FilteringTextInputFormatter.digitsOnly,
                           ],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -318,32 +301,32 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
 
                         // Category field
                         Row(
-                          children: [
-                            Text(
-                              'Category',
-                              style: labelTextStyle,
-                            ),
-                          ],
+                          children: [Text('Category', style: labelTextStyle)],
                         ),
                         const SizedBox(height: 8),
                         DropdownButtonFormField(
                           decoration: inputDecoration.copyWith(
-                            prefixIcon:
-                                Icon(Icons.category_outlined, color: hintColor),
+                            prefixIcon: Icon(
+                              Icons.category_outlined,
+                              color: hintColor,
+                            ),
                           ),
                           style: inputTextStyle,
-                          dropdownColor: isDark
-                              ? NeumorphicColors.darkCardBackground
-                              : NeumorphicColors.lightCardBackground,
+                          dropdownColor:
+                              isDark
+                                  ? NeumorphicColors.darkCardBackground
+                                  : NeumorphicColors.lightCardBackground,
                           isExpanded: true,
                           value: _category,
-                          items: _categories
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
+                          items:
+                              _categories.map<DropdownMenuItem<String>>((
+                                String value,
+                              ) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
                           onChanged: (String? value) {
                             if (value != null) {
                               setState(() {
@@ -361,14 +344,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                         const SizedBox(height: 24),
 
                         // Date field
-                        Row(
-                          children: [
-                            Text(
-                              'Date',
-                              style: labelTextStyle,
-                            ),
-                          ],
-                        ),
+                        Row(children: [Text('Date', style: labelTextStyle)]),
                         const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
@@ -389,15 +365,16 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                                   builder: (context, child) {
                                     return Theme(
                                       data: Theme.of(context).copyWith(
-                                        colorScheme: Theme.of(context)
-                                            .colorScheme
-                                            .copyWith(
-                                              surface: isDark
+                                        colorScheme: Theme.of(
+                                          context,
+                                        ).colorScheme.copyWith(
+                                          surface:
+                                              isDark
                                                   ? NeumorphicColors
                                                       .darkCardBackground
                                                   : NeumorphicColors
                                                       .lightCardBackground,
-                                            ),
+                                        ),
                                       ),
                                       child: child!,
                                     );
@@ -410,15 +387,19 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                                 }
                               },
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14.0),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14.0,
+                                ),
                                 child: Row(
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 12.0),
-                                      child: Icon(Icons.calendar_today,
-                                          color: hintColor),
+                                        horizontal: 12.0,
+                                      ),
+                                      child: Icon(
+                                        Icons.calendar_today,
+                                        color: hintColor,
+                                      ),
                                     ),
                                     Expanded(
                                       child: Text(
@@ -427,8 +408,9 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                                       ),
                                     ),
                                     Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 12.0),
+                                      padding: const EdgeInsets.only(
+                                        right: 12.0,
+                                      ),
                                       child: Icon(
                                         Icons.arrow_drop_down,
                                         color: hintColor,
@@ -454,9 +436,10 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                 vertical: 16.0,
               ),
               decoration: BoxDecoration(
-                color: isDark
-                    ? NeumorphicColors.darkCardBackground
-                    : NeumorphicColors.lightCardBackground,
+                color:
+                    isDark
+                        ? NeumorphicColors.darkCardBackground
+                        : NeumorphicColors.lightCardBackground,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -466,9 +449,10 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                 ],
                 border: Border(
                   top: BorderSide(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.black.withOpacity(0.08),
+                    color:
+                        isDark
+                            ? Colors.white.withOpacity(0.08)
+                            : Colors.black.withOpacity(0.08),
                   ),
                 ),
               ),
@@ -491,7 +475,9 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
                       child: const Text(
                         'Cancel',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w500),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -500,27 +486,31 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
 
                   // Create button
                   Expanded(
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _createExpenseViaApi,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: accentColor,
-                              foregroundColor: Colors.white,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 12.0),
-                              elevation: 2,
-                              shadowColor: accentColor.withOpacity(0.4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
+                    child:
+                        _isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : ElevatedButton(
+                              onPressed: _createExpenseViaApi,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accentColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12.0,
+                                ),
+                                elevation: 2,
+                                shadowColor: accentColor.withOpacity(0.4),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              child: const Text(
+                                'Create',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                            child: const Text(
-                              'Create',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                          ),
                   ),
                 ],
               ),
@@ -545,7 +535,7 @@ class _CreateExpenseFormState extends State<CreateExpenseForm> {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';

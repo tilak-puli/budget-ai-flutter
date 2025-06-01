@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:budget_ai/theme/index.dart';
+import 'package:coin_master_ai/theme/index.dart';
 
 /// A custom app bar with Neumorphic design
 class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -33,20 +33,22 @@ class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Use accent color (purple) as background if specified, otherwise use theme background
-    final backgroundColor = useAccentColor
-        ? (isDark
-            ? NeumorphicColors.darkPurpleBackground
-            : NeumorphicColors.lightPurpleBackground)
-        : (isDark
-            ? NeumorphicColors.darkPrimaryBackground
-            : NeumorphicColors.lightPrimaryBackground);
+    final backgroundColor =
+        useAccentColor
+            ? (isDark
+                ? NeumorphicColors.darkPurpleBackground
+                : NeumorphicColors.lightPurpleBackground)
+            : (isDark
+                ? NeumorphicColors.darkPrimaryBackground
+                : NeumorphicColors.lightPrimaryBackground);
 
     // Text is white when on purple background, otherwise use theme text color
-    final textColor = useAccentColor
-        ? Colors.white
-        : (isDark
-            ? NeumorphicColors.darkTextPrimary
-            : NeumorphicColors.lightTextPrimary);
+    final textColor =
+        useAccentColor
+            ? Colors.white
+            : (isDark
+                ? NeumorphicColors.darkTextPrimary
+                : NeumorphicColors.lightTextPrimary);
 
     if (expandedHeight != null && flexibleContent != null) {
       // Return a flexible space app bar if expandedHeight and flexibleContent are provided
@@ -61,9 +63,9 @@ class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
         title: Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-              ),
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         flexibleSpace: FlexibleSpaceBar(
           background: Padding(
@@ -74,12 +76,13 @@ class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: flexibleContent,
           ),
         ),
-        bottom: bottom != null
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(50),
-                child: bottom!,
-              )
-            : null,
+        bottom:
+            bottom != null
+                ? PreferredSize(
+                  preferredSize: const Size.fromHeight(50),
+                  child: bottom!,
+                )
+                : null,
       );
     }
 
@@ -99,20 +102,19 @@ class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-              ),
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
-      bottom: bottom != null
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(50),
-              child: bottom!,
-            )
-          : null,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-      ),
+      bottom:
+          bottom != null
+              ? PreferredSize(
+                preferredSize: const Size.fromHeight(50),
+                child: bottom!,
+              )
+              : null,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     );
   }
 

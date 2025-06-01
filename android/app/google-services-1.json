@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "706321535461",
+    "project_id": "finbud-99269",
+    "storage_bucket": "finbud-99269.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706321535461:android:a22d309dfa12cdca8d5f0c",
+        "android_client_info": {
+          "package_name": "com.tilakpuli.coin_master_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "706321535461-6n6h3ponqh88p0p3u02eds96o6v3ivs2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tilakpuli.budget_ai",
+            "certificate_hash": "3fe006bed4e197f19ff62bc64e89c5a114b900d5"
+          }
+        },
+        {
+          "client_id": "706321535461-kd0s5bb247l40o4qei7rdm9ff229fv2e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tilakpuli.budget_ai",
+            "certificate_hash": "f33574b2c4f4d6e8046711d1c829c2f6e460810f"
+          }
+        },
+        {
+          "client_id": "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDE5pRKCtEhOvLL3CMIQb5iozJ2zn19yY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "706321535461-dpk7qs2sd140d59c5ke8ll392krpg50v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "706321535461-14kah81bdl2ohqgu8i4seevm172gj4gf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.budgetAi"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

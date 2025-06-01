@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:budget_ai/theme/neumorphic_box.dart';
-import 'package:budget_ai/theme/neumorphic_colors.dart';
+import 'package:coin_master_ai/theme/neumorphic_box.dart';
+import 'package:coin_master_ai/theme/neumorphic_colors.dart';
 
 /// A collection of reusable Neumorphic UI components for Coin Master AI
 class NeumorphicComponents {
@@ -90,12 +90,13 @@ class NeumorphicComponents {
         return GestureDetector(
           onTapDown:
               isDisabled ? null : (_) => setState(() => isPressed = true),
-          onTapUp: isDisabled
-              ? null
-              : (_) {
-                  setState(() => isPressed = false);
-                  onPressed();
-                },
+          onTapUp:
+              isDisabled
+                  ? null
+                  : (_) {
+                    setState(() => isPressed = false);
+                    onPressed();
+                  },
           onTapCancel:
               isDisabled ? null : () => setState(() => isPressed = false),
           child: AnimatedContainer(
@@ -110,10 +111,7 @@ class NeumorphicComponents {
               isPressed: isPressed,
             ),
             child: Center(
-              child: Opacity(
-                opacity: isDisabled ? 0.6 : 1.0,
-                child: icon,
-              ),
+              child: Opacity(opacity: isDisabled ? 0.6 : 1.0, child: icon),
             ),
           ),
         );
@@ -151,18 +149,21 @@ class NeumorphicComponents {
                 top: 5,
                 left: 5,
                 child: GestureDetector(
-                  onTapDown: isDisabled
-                      ? null
-                      : (_) => setState(() => isPressed = true),
-                  onTapUp: isDisabled
-                      ? null
-                      : (_) {
-                          setState(() => isPressed = false);
-                          onPressed();
-                        },
-                  onTapCancel: isDisabled
-                      ? null
-                      : () => setState(() => isPressed = false),
+                  onTapDown:
+                      isDisabled
+                          ? null
+                          : (_) => setState(() => isPressed = true),
+                  onTapUp:
+                      isDisabled
+                          ? null
+                          : (_) {
+                            setState(() => isPressed = false);
+                            onPressed();
+                          },
+                  onTapCancel:
+                      isDisabled
+                          ? null
+                          : () => setState(() => isPressed = false),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     width: size,
@@ -190,8 +191,10 @@ class NeumorphicComponents {
                   top: 0,
                   right: 0,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: badgeColor,
                       borderRadius: BorderRadius.circular(10),
@@ -243,12 +246,14 @@ class NeumorphicComponents {
     bool autofocus = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
-    final hintColor = isDark
-        ? NeumorphicColors.darkTextSecondary
-        : NeumorphicColors.lightTextSecondary;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
+    final hintColor =
+        isDark
+            ? NeumorphicColors.darkTextSecondary
+            : NeumorphicColors.lightTextSecondary;
     final borderColor =
         isDark ? Colors.grey.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
     final fillColor =
@@ -260,18 +265,12 @@ class NeumorphicComponents {
       controller: controller,
       focusNode: focusNode,
       autofocus: autofocus,
-      style: TextStyle(
-        color: textColor,
-        fontSize: 16.0,
-      ),
+      style: TextStyle(color: textColor, fontSize: 16.0),
       decoration: InputDecoration(
         filled: true,
         fillColor: fillColor,
         hintText: hintText,
-        hintStyle: TextStyle(
-          color: hintColor.withOpacity(0.7),
-          fontSize: 16.0,
-        ),
+        hintStyle: TextStyle(color: hintColor.withOpacity(0.7), fontSize: 16.0),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         suffix: suffixWidget,
@@ -309,13 +308,15 @@ class NeumorphicComponents {
     double borderRadius = 24.0,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = color ??
+    final bgColor =
+        color ??
         (isDark
             ? NeumorphicColors.darkSecondaryBackground
             : NeumorphicColors.lightSecondaryBackground);
-    final textColor = isDark
-        ? NeumorphicColors.darkTextPrimary
-        : NeumorphicColors.lightTextPrimary;
+    final textColor =
+        isDark
+            ? NeumorphicColors.darkTextPrimary
+            : NeumorphicColors.lightTextPrimary;
 
     return Container(
       decoration: NeumorphicBox.insetDecoration(
@@ -346,9 +347,11 @@ class NeumorphicComponents {
     Color? backgroundColor,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = progressColor ??
+    final color =
+        progressColor ??
         (isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent);
-    final bgColor = backgroundColor ??
+    final bgColor =
+        backgroundColor ??
         (isDark
             ? NeumorphicColors.darkPrimaryBackground
             : NeumorphicColors.lightPrimaryBackground);
