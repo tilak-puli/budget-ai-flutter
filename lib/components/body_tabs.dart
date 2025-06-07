@@ -1,9 +1,9 @@
-import 'package:coin_master_ai/components/categories.dart';
-import 'package:coin_master_ai/components/chatbox.dart';
-import 'package:coin_master_ai/components/expense_list.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/state/expense_store.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/components/categories.dart';
+import 'package:finly/components/chatbox.dart';
+import 'package:finly/components/expense_list.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/state/expense_store.dart';
+import 'package:finly/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

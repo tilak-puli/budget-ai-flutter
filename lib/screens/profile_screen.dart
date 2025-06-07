@@ -1,20 +1,20 @@
-import 'package:coin_master_ai/components/theme_toggle.dart';
-import 'package:coin_master_ai/screens/budget_screen.dart';
-import 'package:coin_master_ai/screens/subscription_screen.dart';
-import 'package:coin_master_ai/services/subscription_service.dart';
-import 'package:coin_master_ai/services/app_init_service.dart';
-import 'package:coin_master_ai/theme/index.dart';
-import 'package:coin_master_ai/constants/config_keys.dart';
+import 'package:finly/components/theme_toggle.dart';
+import 'package:finly/screens/budget_screen.dart';
+import 'package:finly/screens/subscription_screen.dart';
+import 'package:finly/services/subscription_service.dart';
+import 'package:finly/services/app_init_service.dart';
+import 'package:finly/theme/index.dart';
+import 'package:finly/constants/config_keys.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:coin_master_ai/state/expense_store.dart';
-import 'package:coin_master_ai/models/expense_list.dart';
+import 'package:finly/state/expense_store.dart';
+import 'package:finly/models/expense_list.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:coin_master_ai/components/common_app_bar.dart';
+import 'package:finly/components/common_app_bar.dart';
 import 'dart:convert';
-import 'package:coin_master_ai/screens/contact_us_screen.dart';
+import 'package:finly/screens/contact_us_screen.dart';
 
 class CustomProfileScreen extends StatefulWidget {
   const CustomProfileScreen({super.key});

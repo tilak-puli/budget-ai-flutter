@@ -1,8 +1,8 @@
-# Budget AI (Coin Master AI)
+# Finly
 
 ## Project Overview
 
-Budget AI (also named Coin Master AI in the UI) is a Flutter-based mobile application designed to simplify expense tracking and budgeting with the help of artificial intelligence. The app allows users to add expenses by describing them in natural language, and the AI automatically categorizes and processes these descriptions into structured expense entries.
+Finly (formerly Budget AI/Coin Master AI) is a Flutter-based mobile application designed to simplify expense tracking and budgeting with the help of artificial intelligence. The app allows users to add expenses by describing them in natural language, and the AI automatically categorizes and processes these descriptions into structured expense entries.
 
 ## Key Features
 

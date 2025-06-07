@@ -1,10 +1,10 @@
-import 'package:coin_master_ai/pages/homepage.dart';
-import 'package:coin_master_ai/pages/login.dart';
-import 'package:coin_master_ai/services/initialization_service.dart';
-import 'package:coin_master_ai/services/app_init_service.dart';
-import 'package:coin_master_ai/state/budget_store.dart';
-import 'package:coin_master_ai/state/expense_store.dart';
-import 'package:coin_master_ai/state/chat_store.dart';
+import 'package:finly/pages/homepage.dart';
+import 'package:finly/pages/login.dart';
+import 'package:finly/services/initialization_service.dart';
+import 'package:finly/services/app_init_service.dart';
+import 'package:finly/state/budget_store.dart';
+import 'package:finly/state/expense_store.dart';
+import 'package:finly/state/chat_store.dart';
 import 'package:firebase_auth/firebase_auth.dart'
     hide PhoneAuthProvider, GoogleAuthProvider;
 import 'package:flutter/material.dart';
@@ -27,7 +27,7 @@ class AuthGate extends StatelessWidget {
           _initializeStoresFromAppData(context);
         });
 
-        return const MyHomePage(title: 'Coin Master AI');
+        return const MyHomePage(title: 'Finly');
       },
     );
   }

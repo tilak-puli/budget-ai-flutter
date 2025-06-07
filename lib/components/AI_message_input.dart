@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:coin_master_ai/components/expense_card.dart';
-import 'package:coin_master_ai/components/create_expense_form.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/services/subscription_service.dart';
-import 'package:coin_master_ai/services/initialization_service.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/components/expense_card.dart';
+import 'package:finly/components/create_expense_form.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/services/subscription_service.dart';
+import 'package:finly/services/initialization_service.dart';
+import 'package:finly/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';

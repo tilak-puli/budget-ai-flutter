@@ -1,16 +1,16 @@
-import 'package:coin_master_ai/services/budget_service.dart';
-import 'package:coin_master_ai/services/subscription_service.dart';
-import 'package:coin_master_ai/services/app_init_service.dart';
+import 'package:finly/services/budget_service.dart';
+import 'package:finly/services/subscription_service.dart';
+import 'package:finly/services/app_init_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
-import 'package:coin_master_ai/models/app_init_response.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/state/budget_store.dart';
-import 'package:coin_master_ai/state/expense_store.dart';
-import 'package:coin_master_ai/state/chat_store.dart';
+import 'package:finly/models/app_init_response.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/state/budget_store.dart';
+import 'package:finly/state/expense_store.dart';
+import 'package:finly/state/chat_store.dart';
 
 // Base API constants
 const host = "backend-2xqnus4dqq-uc.a.run.app";

@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/theme/index.dart';
 import 'package:flutter/material.dart';
 
 class TypingIndicator extends StatefulWidget {

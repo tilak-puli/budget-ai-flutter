@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:coin_master_ai/models/budget.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/models/expense_list.dart';
-import 'package:coin_master_ai/state/budget_store.dart';
-import 'package:coin_master_ai/models/app_init_response.dart';
+import 'package:finly/models/budget.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/models/expense_list.dart';
+import 'package:finly/state/budget_store.dart';
+import 'package:finly/models/app_init_response.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';

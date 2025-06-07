@@ -1,10 +1,10 @@
-import 'package:coin_master_ai/components/AI_message_input.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/state/chat_store.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/components/AI_message_input.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/state/chat_store.dart';
+import 'package:finly/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:coin_master_ai/api.dart';
+import 'package:finly/api.dart';
 
 class Chatbox extends StatefulWidget {
   final Future<Expense?> Function(dynamic userInput) addExpense;
@@ -50,14 +50,29 @@ class _ChatboxState extends State<Chatbox> {
   }
 
   // Function to show the report dialog
-  void _showReportDialog(BuildContext context, String expenseId) {
+  void _showReportDialog(BuildContext context, String messageId) {
     final TextEditingController reportController = TextEditingController();
     final chatStore = Provider.of<ChatStore>(context, listen: false);
     Expense? expense;
-    for (var m in chatStore.history.messages) {
-      if (m is ExpenseMessage && m.expense.id == expenseId) {
-        expense = m.expense;
-        break;
+    String? textContent;
+
+    // Find the message content based on the messageId
+    if (messageId == 'text_message') {
+      // Find the latest AI text message
+      for (int i = chatStore.history.messages.length - 1; i >= 0; i--) {
+        final message = chatStore.history.messages[i];
+        if (message is TextMessage && !message.isUserMessage) {
+          textContent = message.text;
+          break;
+        }
+      }
+    } else {
+      // Find the expense message
+      for (var m in chatStore.history.messages) {
+        if (m is ExpenseMessage && m.expense.id == messageId) {
+          expense = m.expense;
+          break;
+        }
       }
     }
 
@@ -171,6 +186,13 @@ class _ChatboxState extends State<Chatbox> {
                             expense,
                             message: reportController.text,
                           );
+                        } else if (textContent != null) {
+                          // For text messages, you might want to create a different API call
+                          // For now, we'll just show the success message
+                          // TODO: Implement ApiService().reportAITextMessage(textContent, reportController.text);
+                          print(
+                            'Reporting AI text message: $textContent with feedback: ${reportController.text}',
+                          );
                         }
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,6 +262,16 @@ class _ChatboxState extends State<Chatbox> {
           }
         }
 
+        // Find the latest AI text message for the report button
+        ChatMessage? latestAITextMessage;
+        for (int i = chatStore.history.messages.length - 1; i >= 0; i--) {
+          final message = chatStore.history.messages[i];
+          if (message is TextMessage && !message.isUserMessage) {
+            latestAITextMessage = message;
+            break;
+          }
+        }
+
         return Column(
           children: [
             // Chat messages
@@ -255,6 +287,9 @@ class _ChatboxState extends State<Chatbox> {
                     final message = chatStore.history.messages[index];
                     bool isLatestExpenseMessage =
                         message == latestExpenseMessage;
+                    bool isLatestAITextMessage = message == latestAITextMessage;
+                    bool shouldShowReportButton =
+                        isLatestExpenseMessage || isLatestAITextMessage;
 
                     return Padding(
                       padding: EdgeInsets.only(
@@ -276,8 +311,8 @@ class _ChatboxState extends State<Chatbox> {
                                     : Alignment.centerLeft,
                             child: message.render(),
                           ),
-                          // Show report button only below the most recent expense message
-                          if (isLatestExpenseMessage)
+                          // Show report button for the most recent expense message or AI text message
+                          if (shouldShowReportButton)
                             Padding(
                               padding: const EdgeInsets.only(
                                 top: 2.0,
@@ -287,7 +322,11 @@ class _ChatboxState extends State<Chatbox> {
                                 onTap:
                                     () => _showReportDialog(
                                       context,
-                                      (message as ExpenseMessage).expense.id,
+                                      isLatestExpenseMessage
+                                          ? (message as ExpenseMessage)
+                                              .expense
+                                              .id
+                                          : 'text_message', // Use a placeholder ID for text messages
                                     ),
                                 child: const Text(
                                   "Spot an error? Help us improve AI.",

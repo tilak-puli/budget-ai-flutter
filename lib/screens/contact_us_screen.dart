@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:coin_master_ai/components/common_app_bar.dart';
+import 'package:finly/components/common_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContactUsScreen extends StatelessWidget {

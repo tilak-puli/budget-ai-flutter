@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/theme/index.dart';
 
 /// A custom app bar with Neumorphic design
 class NeumorphicAppBar extends StatelessWidget implements PreferredSizeWidget {

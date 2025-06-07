@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Neumorphic color palette for Coin Master AI
+/// Neumorphic color palette for Finly
 /// Based on Modern Design System with focus on accessibility and visual appeal
 class NeumorphicColors {
   /// Light mode colors

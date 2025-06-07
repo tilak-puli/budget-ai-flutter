@@ -55,22 +55,20 @@ class LoginScreen extends StatelessWidget {
                     ),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/icon.png',
-                        fit: BoxFit.none,
+                        'assets/new_icon.jpg',
+                        fit: BoxFit.cover,
                         alignment: Alignment.center,
-                        scale: 2.5,
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
                   // App Name
                   Text(
-                    "Coin Master AI",
-                    style: GoogleFonts.poppins(
+                    "Finly",
+                    style: GoogleFonts.satisfy(
                       textStyle: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 48,
                         letterSpacing: 0.5,
                         shadows: [
                           Shadow(

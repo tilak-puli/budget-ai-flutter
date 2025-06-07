@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:coin_master_ai/theme/neumorphic_colors.dart';
+import 'package:finly/theme/neumorphic_colors.dart';
 
-/// Neumorphic Box Decoration helper for Coin Master AI
+/// Neumorphic Box Decoration helper for Finly
 /// Implements consistent shadow styles based on the Neumorphism 2.0 design specification
 class NeumorphicBox {
   /// Light source direction, consistent across all elements

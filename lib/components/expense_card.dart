@@ -1,10 +1,10 @@
-import 'package:coin_master_ai/api.dart';
-import 'package:coin_master_ai/components/expense_form.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/state/chat_store.dart';
-import 'package:coin_master_ai/state/expense_store.dart';
-import 'package:coin_master_ai/theme/index.dart';
-import 'package:coin_master_ai/utils/money.dart';
+import 'package:finly/api.dart';
+import 'package:finly/components/expense_form.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/state/chat_store.dart';
+import 'package:finly/state/expense_store.dart';
+import 'package:finly/theme/index.dart';
+import 'package:finly/utils/money.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';

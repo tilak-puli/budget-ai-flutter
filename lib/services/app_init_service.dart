@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:coin_master_ai/models/app_init_response.dart';
-import 'package:coin_master_ai/models/expense_list.dart';
-import 'package:coin_master_ai/models/expense.dart';
+import 'package:finly/models/app_init_response.dart';
+import 'package:finly/models/expense_list.dart';
+import 'package:finly/models/expense.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:developer' as developer;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:coin_master_ai/theme/neumorphic_box.dart';
-import 'package:coin_master_ai/theme/neumorphic_colors.dart';
+import 'package:finly/theme/neumorphic_box.dart';
+import 'package:finly/theme/neumorphic_colors.dart';
 
-/// A collection of reusable Neumorphic UI components for Coin Master AI
+/// A collection of reusable Neumorphic UI components for Finly
 class NeumorphicComponents {
   /// Creates a neumorphic card
   static Widget card({

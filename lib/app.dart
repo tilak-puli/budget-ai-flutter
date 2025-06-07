@@ -1,6 +1,6 @@
-import 'package:coin_master_ai/auth_gate.dart';
-import 'package:coin_master_ai/state/chat_store.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/auth_gate.dart';
+import 'package:finly/state/chat_store.dart';
+import 'package:finly/theme/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
           return MaterialApp(
-            title: 'Coin Master AI',
+            title: 'Finly',
             themeMode: themeService.themeMode,
             theme: AppTheme.lightTheme(context),
             darkTheme: AppTheme.darkTheme(context),

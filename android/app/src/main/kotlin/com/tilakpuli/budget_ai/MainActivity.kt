@@ -1,4 +1,4 @@
-package com.tilakpuli.coin_master_ai
+package com.tilakpuli.budget_ai
 
 import io.flutter.embedding.android.FlutterActivity
 

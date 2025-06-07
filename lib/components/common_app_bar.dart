@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/theme/index.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A common app bar used across the app for consistent styling
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -56,9 +57,12 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
           leadingWidget != null ? 0 : NavigationToolbar.kMiddleSpacing,
       title: Text(
         title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w600,
+        style: GoogleFonts.satisfy(
+          textStyle: TextStyle(
+            color: textColor,
+            fontSize: 32,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),

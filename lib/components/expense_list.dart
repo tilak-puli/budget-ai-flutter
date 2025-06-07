@@ -1,5 +1,5 @@
-import 'package:coin_master_ai/components/expense_card.dart';
-import 'package:coin_master_ai/state/expense_store.dart';
+import 'package:finly/components/expense_card.dart';
+import 'package:finly/state/expense_store.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseList extends StatelessWidget {
@@ -38,7 +38,7 @@ class NoExpensesMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Text(
-      'No expenses to show.\n Just message the AI to start your budgeting journey. for example, "biryani 250"',
+      'No expenses to show.\n Just message the AI to start your budgeting journey. for example, "biryani 250". Once you add enough expenses, you can ask AI questions like "how much did I spend on Food?"',
       textAlign: TextAlign.center,
     );
   }

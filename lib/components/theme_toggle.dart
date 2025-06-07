@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/theme/index.dart';
 
 /// A neumorphic theme toggle button that switches between light and dark mode
 class ThemeToggle extends StatelessWidget {

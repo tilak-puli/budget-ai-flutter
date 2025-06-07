@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:coin_master_ai/theme/theme_service.dart';
+import 'package:finly/theme/theme_service.dart';
 
 /// Provider for theme service
 /// Use this to access theme functionality throughout the app

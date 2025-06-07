@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:coin_master_ai/api.dart';
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/theme/index.dart';
-import 'package:coin_master_ai/utils/time.dart';
+import 'package:finly/api.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/theme/index.dart';
+import 'package:finly/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';

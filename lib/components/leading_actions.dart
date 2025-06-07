@@ -1,5 +1,5 @@
-import 'package:coin_master_ai/theme/index.dart';
-import 'package:coin_master_ai/utils/time.dart';
+import 'package:finly/theme/index.dart';
+import 'package:finly/utils/time.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
@@ -22,9 +22,6 @@ class LeadingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use white text on purple background
-    final textColor = Colors.white;
-
     // Format display text based on whether it's current month/year
     String displayText;
     if (fromDate.year == todayDate.year) {
@@ -37,66 +34,46 @@ class LeadingActions extends StatelessWidget {
 
     // Get theme colors
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor =
-        isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
-    return Container(
-      constraints: const BoxConstraints(
-        minWidth: 100,
-        maxWidth: 150,
-      ), // Dynamic constraints for flexibility
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: () async {
-            // Show a custom styled month year picker with purple theme
-            final selected = await showDialog<DateTime>(
-              context: context,
-              builder: (BuildContext context) {
-                return Dialog(
-                  backgroundColor: isDark ? Color(0xFF303030) : Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: MonthYearPickerDialog(
-                    fromDate: fromDate,
-                    updateTimeFrame: updateTimeFrame,
-                  ),
-                );
-              },
-            );
-
-            if (selected != null) {
-              updateTimeFrame(getMonthStart(selected), getMonthEnd(selected));
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    displayText,
-                    style: const TextStyle(
-                      color: Colors.white, // Always white on app bar
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.white, // Always white on app bar
-                ),
-              ],
-            ),
+    // Use a very simple button with no size constraints
+    return Padding(
+      padding: const EdgeInsets.only(left: 12.0),
+      child: TextButton.icon(
+        icon: Text(
+          displayText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
           ),
+        ),
+        label: const Icon(Icons.arrow_drop_down, color: Colors.white, size: 24),
+        onPressed: () async {
+          // Show a custom styled month year picker with purple theme
+          final selected = await showDialog<DateTime>(
+            context: context,
+            builder: (BuildContext context) {
+              return Dialog(
+                backgroundColor: isDark ? Color(0xFF303030) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: MonthYearPickerDialog(
+                  fromDate: fromDate,
+                  updateTimeFrame: updateTimeFrame,
+                ),
+              );
+            },
+          );
+      
+          if (selected != null) {
+            updateTimeFrame(getMonthStart(selected), getMonthEnd(selected));
+          }
+        },
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
     );
@@ -130,8 +107,12 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = NeumorphicColors.lightPurpleBackground;
     final selectMonthColor = accentColor;
+    // Text colors based on theme brightness
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final selectedTextColor = Colors.white;
 
     // Month names
     final months = [
@@ -202,7 +183,7 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
                         .map(
                           (year) => DropdownMenuItem(
                             value: year,
-                            child: Text('$year'),
+                            child: Text('$year', style: TextStyle(color: textColor)),
                           ),
                         )
                         .toList(),
@@ -213,13 +194,14 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
                     });
                   }
                 },
-                icon: const Icon(Icons.arrow_drop_down),
+                icon: Icon(Icons.arrow_drop_down, color: textColor),
                 underline: Container(),
+                dropdownColor: isDark ? Color(0xFF303030) : Colors.white,
               ),
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.arrow_back_ios, size: 16),
+                    icon: Icon(Icons.arrow_back_ios, size: 16, color: textColor),
                     onPressed: () {
                       setState(() {
                         if (selectedMonth == 1) {
@@ -232,7 +214,7 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
                     },
                   ),
                   IconButton(
-                    icon: Icon(Icons.arrow_forward_ios, size: 16),
+                    icon: Icon(Icons.arrow_forward_ios, size: 16, color: textColor),
                     onPressed: () {
                       setState(() {
                         if (selectedMonth == 12) {
@@ -283,7 +265,7 @@ class _MonthYearPickerDialogState extends State<MonthYearPickerDialog> {
                     child: Text(
                       months[index],
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
+                        color: isSelected ? selectedTextColor : textColor,
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
                       ),

@@ -1,11 +1,11 @@
-import 'package:coin_master_ai/services/app_init_service.dart';
-import 'package:coin_master_ai/services/subscription_service.dart';
+import 'package:finly/services/app_init_service.dart';
+import 'package:finly/services/subscription_service.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:coin_master_ai/theme/neumorphic_box.dart';
-import 'package:coin_master_ai/theme/index.dart';
+import 'package:finly/theme/neumorphic_box.dart';
+import 'package:finly/theme/index.dart';
 import 'package:intl/intl.dart';
-import 'package:coin_master_ai/components/common_app_bar.dart';
+import 'package:finly/components/common_app_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});

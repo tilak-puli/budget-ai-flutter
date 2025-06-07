@@ -1,5 +1,5 @@
-import 'package:coin_master_ai/models/expense.dart';
-import 'package:coin_master_ai/models/budget.dart';
+import 'package:finly/models/expense.dart';
+import 'package:finly/models/budget.dart';
 
 // Helper functions for parsing numeric values
 double _parseDouble(dynamic value) {

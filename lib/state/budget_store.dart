@@ -1,6 +1,6 @@
-import 'package:coin_master_ai/models/budget.dart';
-import 'package:coin_master_ai/services/budget_service.dart';
-import 'package:coin_master_ai/models/app_init_response.dart' as init_api;
+import 'package:finly/models/budget.dart';
+import 'package:finly/services/budget_service.dart';
+import 'package:finly/models/app_init_response.dart' as init_api;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
