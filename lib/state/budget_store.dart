@@ -135,6 +135,15 @@ class BudgetStore with ChangeNotifier {
         developer.log(
           "Budget initialized from app init data, ID: ${_budget.id}",
         );
+
+        // Store the budget data in local storage for offline access
+        storeBudgetDataInStorage({
+          'success': true,
+          'budget': _budget.toJson(),
+          'categories': initData.budget.categories,
+          'budgetExists': true,
+          'lastUpdated': DateTime.now().toIso8601String(),
+        });
       }
 
       // Update categories
@@ -144,34 +153,59 @@ class BudgetStore with ChangeNotifier {
       );
 
       // Update budget summary
-      if (initData.budgetSummary.budgetExists) {
-        final initSummary = initData.budgetSummary;
+      final initSummary = initData.budgetSummary;
 
-        // Convert category summaries from API format to app format
-        final categoryData =
-            initSummary.categories
-                .map(
-                  (cat) => CategorySummary(
-                    category: cat.category,
-                    budget: cat.budget,
-                    actual: cat.actual,
-                    remaining: cat.remaining,
-                  ),
-                )
-                .toList();
+      // Convert category summaries from API format to app format
+      final categoryData =
+          initSummary.categories
+              .map(
+                (cat) => CategorySummary(
+                  category: cat.category,
+                  budget: cat.budget,
+                  actual: cat.actual,
+                  remaining: cat.remaining,
+                ),
+              )
+              .toList();
 
-        // Create BudgetSummary instance from our models
-        _budgetSummary = BudgetSummary(
-          totalBudget: initSummary.totalBudget,
-          totalSpending: initSummary.totalSpending,
-          remainingBudget: initSummary.remainingBudget,
-          categories: categoryData,
-          month: initSummary.month,
-          year: initSummary.year,
-        );
+      // Create BudgetSummary instance from our models
+      _budgetSummary = BudgetSummary(
+        totalBudget: initSummary.totalBudget,
+        totalSpending: initSummary.totalSpending,
+        remainingBudget: initSummary.remainingBudget,
+        categories: categoryData,
+        month: initSummary.month,
+        year: initSummary.year,
+      );
 
-        developer.log("Budget summary initialized from app init data");
-      }
+      // Store the budget summary in local storage for offline access
+      storeBudgetSummaryInStorage(
+        {
+          'success': true,
+          'summary': {
+            'totalBudget': initSummary.totalBudget,
+            'totalSpending': initSummary.totalSpending,
+            'remainingBudget': initSummary.remainingBudget,
+            'month': initSummary.month,
+            'year': initSummary.year,
+            'categories':
+                categoryData
+                    .map(
+                      (cat) => {
+                        'category': cat.category,
+                        'budget': cat.budget,
+                        'actual': cat.actual,
+                        'remaining': cat.remaining,
+                      },
+                    )
+                    .toList(),
+          },
+        },
+        month: initSummary.month,
+        year: initSummary.year,
+      );
+
+      developer.log("Budget summary initialized from app init data");
 
       _hasCachedData = true;
       developer.log("------- BUDGET STORE INITIALIZATION COMPLETE -------\n");
@@ -195,28 +229,6 @@ class BudgetStore with ChangeNotifier {
       await _fetchFromAPI();
     } catch (e) {
       _error = 'Error initializing budget: $e';
-      developer.log(_error!);
-    } finally {
-      _loading = false;
-      notifyListeners();
-    }
-  }
-
-  // Initialize budget from local storage only (no API calls)
-  Future<void> initializeBudgetFromLocalStorage() async {
-    _loading = true;
-    notifyListeners();
-
-    try {
-      // Only load from local storage
-      await _loadFromLocalStorage();
-
-      // Set the flag if we have data
-      if (_budget.id != null) {
-        _hasCachedData = true;
-      }
-    } catch (e) {
-      _error = 'Error loading budget from local storage: $e';
       developer.log(_error!);
     } finally {
       _loading = false;
@@ -817,5 +829,27 @@ class BudgetStore with ChangeNotifier {
 
     // Notify listeners about the changes
     notifyListeners();
+  }
+
+  // Initialize budget from local storage only (no API calls)
+  Future<void> initializeBudgetFromLocalStorage() async {
+    _loading = true;
+    notifyListeners();
+
+    try {
+      // Only load from local storage
+      await _loadFromLocalStorage();
+
+      // Set the flag if we have data
+      if (_budget.id != null) {
+        _hasCachedData = true;
+      }
+    } catch (e) {
+      _error = 'Error loading budget from local storage: $e';
+      developer.log(_error!);
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 }

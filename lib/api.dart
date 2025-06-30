@@ -16,14 +16,19 @@ getHeaders() async {
 
   return {
     'Content-Type': 'application/json; charset=UTF-8',
-    'Authorization': 'Bearer $bearer'
+    'Authorization': 'Bearer $bearer',
   };
 }
 
 class ApiService {
   // Helper method to log requests and responses
-  Future<http.Response> _makeRequest(String method, Uri url,
-      Map<String, String> headers, String? body, String operationName) async {
+  Future<http.Response> _makeRequest(
+    String method,
+    Uri url,
+    Map<String, String> headers,
+    String? body,
+    String operationName,
+  ) async {
     try {
       print("\n------- $operationName API CALL [$method] -------");
       print("URL: $url");
@@ -64,18 +69,25 @@ class ApiService {
   }
 
   Future<http.Response> fetchExpenses(
-      DateTime fromDate, DateTime toDate) async {
+    DateTime fromDate,
+    DateTime toDate,
+  ) async {
     var uri = URI(host, '$URL_PREFIX/expenses', {
       "fromDate": fromDate.toUtc().toIso8601String(),
-      "toDate": toDate.toUtc().toIso8601String()
+      "toDate": toDate.toUtc().toIso8601String(),
     });
 
     final headers = await getHeaders();
     return _makeRequest('GET', uri, headers, null, 'FETCH_EXPENSES');
   }
 
-  Future<http.Response> addExpense(userMessage, date,
-      {double? latitude, double? longitude}) async {
+  Future<http.Response> addExpense(
+    userMessage,
+    date, {
+    double? latitude,
+    double? longitude,
+    List<Map<String, String>>? previousMessages,
+  }) async {
     final uri = URI(host, '$URL_PREFIX/ai/expense');
     final headers = await getHeaders();
     final body = json.encode(<String, dynamic>{
@@ -83,6 +95,7 @@ class ApiService {
       "date": date != null ? date.toString() : "",
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
+      if (previousMessages != null) 'previousMessages': previousMessages,
     });
 
     return _makeRequest('POST', uri, headers, body, 'AI_ADD_EXPENSE');
@@ -118,16 +131,23 @@ class ApiService {
         "amount": expense.amount,
         if (expense.latitude != null) 'latitude': expense.latitude,
         if (expense.longitude != null) 'longitude': expense.longitude,
-      }
+      },
     });
 
     return _makeRequest(
-        'POST', uri, headers, requestBody, 'MANUAL_CREATE_EXPENSE');
+      'POST',
+      uri,
+      headers,
+      requestBody,
+      'MANUAL_CREATE_EXPENSE',
+    );
   }
 
   // Method to report an AI-generated expense as incorrect
-  Future<http.Response> reportAIExpense(Expense expense,
-      {String? message}) async {
+  Future<http.Response> reportAIExpense(
+    Expense expense, {
+    String? message,
+  }) async {
     final uri = URI(host, '$URL_PREFIX/report-ai-expense');
     final headers = await getHeaders();
     final body = json.encode({

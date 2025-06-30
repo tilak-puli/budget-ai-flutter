@@ -128,7 +128,7 @@ class BudgetInfo {
 
   factory BudgetInfo.fromJson(Map<String, dynamic> json) {
     return BudgetInfo(
-      budget: json['budgetExists'] ? Budget.fromJson(json['budget']) : null,
+      budget: Budget.fromJson(json['budget']),
       categories: List<String>.from(json['categories']),
       budgetExists: json['budgetExists'] ?? false,
     );

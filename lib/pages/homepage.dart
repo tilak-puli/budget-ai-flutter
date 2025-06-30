@@ -132,6 +132,49 @@ Future<Map<String, dynamic>?> getConfigDataFromStorage() async {
   }
 }
 
+// Function to store message context in local storage
+Future<void> storeMessageContextInStorage(
+  List<Map<String, String>> messageContext,
+) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final serialized = jsonEncode(messageContext);
+    await prefs.setString("message_context", serialized);
+    developer.log('Message context stored in local storage');
+  } catch (e) {
+    developer.log("ERROR STORING MESSAGE CONTEXT: $e");
+  }
+}
+
+// Function to get message context from local storage
+Future<List<Map<String, String>>> getMessageContextFromStorage() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString("message_context");
+
+    if (storedData == null || storedData.isEmpty) {
+      return [];
+    }
+
+    // Parse the JSON
+    final List<dynamic> contextData = jsonDecode(storedData) as List<dynamic>;
+
+    // Convert to the correct type
+    final typedContextData =
+        contextData
+            .map(
+              (item) => Map<String, String>.from(item as Map<String, dynamic>),
+            )
+            .toList();
+
+    developer.log('Message context retrieved from local storage');
+    return typedContextData;
+  } catch (e) {
+    developer.log("ERROR RETRIEVING MESSAGE CONTEXT: $e");
+    return [];
+  }
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
@@ -151,10 +194,14 @@ class _MyHomePageState extends State<MyHomePage> {
   int _remainingMessages = 0;
   int _dailyMessageLimit = 5;
 
+  // Add message context list to store conversation history
+  List<Map<String, String>> _messageContext = [];
+
   DateTime fromDate = getMonthStart(todayDate);
   DateTime toDate = getMonthEnd(todayDate);
 
-  Future<Expenses> fetchExpenses({bool showLoading = true}) async {
+  Future<Expenses> fetchExpenses({bool showLoading = false}) async {
+    // Only show loading if explicitly requested, default is now false
     expenseStore.loading = showLoading;
 
     try {
@@ -170,8 +217,10 @@ class _MyHomePageState extends State<MyHomePage> {
         throw Exception('Failed to load app data');
       }
 
-      // Also update the BudgetStore with data from the init response
+      // Update BudgetStore with comprehensive data from init API
       final budgetStore = Provider.of<BudgetStore>(context, listen: false);
+
+      // Initialize the budget store with all the data from the init response
       budgetStore.initializeFromAppData(initData);
       developer.log('Updated BudgetStore with data from init API response');
 
@@ -207,21 +256,57 @@ class _MyHomePageState extends State<MyHomePage> {
         _dailyMessageLimit = dailyLimit;
       });
 
-      // Convert to Expenses object and update store
+      // Convert to Expenses object from init data
       final serverExpenses = _appInitService.getExpensesFromInitData(initData);
 
-      expenseStore.loading = false;
-      expenseStore.setExpenses(serverExpenses);
+      // Only update expenses that are new or changed
+      if (!showLoading) {
+        // When not explicitly refreshing, merge with existing expenses instead of replacing
+        final currentExpenses = expenseStore.expenses;
+        final currentExpenseIds = currentExpenses.list.map((e) => e.id).toSet();
 
-      // Also update date range in expense store
+        // Find new expenses from server that don't exist locally
+        final newExpenses =
+            serverExpenses.list
+                .where((expense) => !currentExpenseIds.contains(expense.id))
+                .toList();
+
+        // Add only new expenses to the existing list
+        if (newExpenses.isNotEmpty) {
+          developer.log(
+            'Adding ${newExpenses.length} new expenses from server',
+          );
+          for (var expense in newExpenses) {
+            expenseStore.add(expense, context: context);
+          }
+
+          // Store the updated expenses
+          storeExpensesInStorage(expenseStore.expenses);
+
+          // Update chat with new expenses
+          for (var expense in newExpenses) {
+            if (expense.prompt != null && expense.prompt!.isNotEmpty) {
+              chatStore.add(TextMessage(true, expense.prompt!));
+            }
+            chatStore.add(ExpenseMessage(expense));
+          }
+        }
+      } else {
+        // When explicitly refreshing, replace all expenses
+        expenseStore.setExpenses(serverExpenses);
+
+        // Update chat with server data
+        chatStore.clear();
+        addChatMessages(serverExpenses);
+      }
+
+      expenseStore.loading = false;
+
+      // Update date range in expense store
       expenseStore.fromDate = initData.dateRange.fromDate;
       expenseStore.toDate = initData.dateRange.toDate;
 
-      // Update chat with server data
-      chatStore.clear();
-      addChatMessages(serverExpenses);
-
-      return serverExpenses;
+      return expenseStore.expenses;
     } catch (e) {
       expenseStore.loading = false;
       chatStore.add(
@@ -304,11 +389,13 @@ class _MyHomePageState extends State<MyHomePage> {
     Response response;
 
     try {
+      // Pass the message context to the API
       response = await ApiService().addExpense(
         userMessage,
         date,
         latitude: latitude,
         longitude: longitude,
+        previousMessages: _messageContext.isNotEmpty ? _messageContext : null,
       );
     } catch (e) {
       return Exception("Something went wrong while connecting to server");
@@ -348,6 +435,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
           // Extract and return the expense
           if (jsonData.containsKey('expense')) {
+            // Clear message context when we get a successful expense
+            _messageContext = [];
+            await storeMessageContextInStorage(_messageContext);
+            developer.log(
+              'Cleared message context after successful expense creation',
+            );
+
             return {
               'expense': Expense.fromJson(jsonData['expense']),
               'remainingQuota': remainingQuota,
@@ -358,10 +452,30 @@ class _MyHomePageState extends State<MyHomePage> {
         }
 
         if (jsonData.containsKey('askReply')) {
-          return jsonData['askReply'];
+          // Store the user message and AI reply in the context
+          String aiReply = jsonData['askReply'];
+
+          // Add the current exchange to message context
+          _messageContext.add({'role': 'human', 'content': userMessage});
+          _messageContext.add({'role': 'ai', 'content': aiReply});
+
+          // Store updated message context in local storage
+          await storeMessageContextInStorage(_messageContext);
+          developer.log(
+            'Updated message context with new exchange, total: ${_messageContext.length} messages',
+          );
+
+          return aiReply;
         }
 
         // Just return the expense if no quota info
+        // Clear message context when we get a successful expense
+        _messageContext = [];
+        await storeMessageContextInStorage(_messageContext);
+        developer.log(
+          'Cleared message context after successful expense creation',
+        );
+
         return Expense.fromJson(jsonData);
       } catch (e) {
         developer.log('Error parsing expense data: $e');
@@ -451,15 +565,21 @@ class _MyHomePageState extends State<MyHomePage> {
     // Initialize expenses and chatStore
     expenseStore = Provider.of<ExpenseStore>(context, listen: false);
     chatStore = Provider.of<ChatStore>(context, listen: false);
+    final budgetStore = Provider.of<BudgetStore>(context, listen: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // First load expenses from local storage
+      // First load expenses from local storage - this is our source of truth
       Expenses localExpenses = await getExpensesFromStorage();
+
+      // Load message context from local storage
+      _messageContext = await getMessageContextFromStorage();
+      developer.log(
+        'Loaded message context: ${_messageContext.length} messages',
+      );
 
       // Set the expenses in the store immediately and add to chat
       expenseStore.setExpenses(localExpenses);
-      expenseStore.loading =
-          false; // Set loading to false after setting local expenses
+      expenseStore.loading = false; // No loading indicator
 
       // Try to get subscription data from local storage
       final localSubscriptionData = await getSubscriptionDataFromStorage();
@@ -474,32 +594,30 @@ class _MyHomePageState extends State<MyHomePage> {
         developer.log('Using subscription data from local storage');
       }
 
+      // Load budget data from local storage
+      await budgetStore.initializeBudgetFromLocalStorage();
+      developer.log('Loaded budget data from local storage');
+
       // Add local expenses to chat immediately
       if (!localExpenses.isEmpty) {
         addChatMessages(localExpenses);
       }
 
-      // Now call the unified init API to get all updated data
+      // Now call the unified init API to get updated data in the background without showing loading indicator
       try {
-        developer.log('Calling unified init API to get fresh data...');
+        developer.log('Silently fetching updated data from init API...');
 
-        // Call the refresh expenses function which uses the init API
-        final updatedExpenses = await refreshExpenses(showLoading: true);
+        // Call the refresh expenses function with showLoading set to false
+        final updatedExpenses = await refreshExpenses(showLoading: false);
         developer.log(
           'Successfully retrieved ${updatedExpenses.list.length} expenses from init API',
         );
-
-        // The budget store will be automatically updated with the data from init API
-        // in the fetchExpenses method via the initializeFromAppData flow
       } catch (e) {
         developer.log('Error fetching data from init API: $e');
 
-        // Fallback to separate API calls if needed
+        // Fallback to separate API calls if needed, but still don't show loading
         try {
-          // Prepare all API calls
-          final budgetStore = Provider.of<BudgetStore>(context, listen: false);
-
-          // Get budget data
+          // Get budget data without showing loading indicator
           await budgetStore.initializeBudget().catchError((e) {
             developer.log('Error fetching budget config: $e');
             return null; // Just continue if budget config fails
@@ -590,7 +708,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<Expenses> refreshExpenses({bool showLoading = true}) async {
+  Future<Expenses> refreshExpenses({bool showLoading = false}) async {
     if (showLoading) {
       expenseStore.loading = true;
     }
@@ -610,12 +728,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Add a method specifically for pull-to-refresh that always shows loading
+  Future<void> handlePullToRefresh() async {
+    developer.log('Pull-to-refresh triggered, loading fresh data...');
+    // Always show loading indicator for pull-to-refresh
+    await refreshExpenses(showLoading: true);
+    return;
+  }
+
   Future<void> updateTimeFrame(newFromDate, newToDate) async {
     setState(() {
       fromDate = newFromDate;
       toDate = newToDate;
     });
-    refreshExpenses();
+    // When date range changes, do a full refresh with loading
+    refreshExpenses(showLoading: true);
   }
 
   Future<Expense?> addExpense(dynamic userInput) async {
@@ -628,6 +755,11 @@ class _MyHomePageState extends State<MyHomePage> {
         storeExpensesInStorage(expenseStore.expenses);
         // Notify for scroll update
         chatStore.notifyScrollUpdate();
+
+        // Clear message context when manually creating an expense
+        _messageContext = [];
+        await storeMessageContextInStorage(_messageContext);
+        developer.log('Cleared message context after manual expense creation');
 
         return userInput;
       } catch (e) {
@@ -673,6 +805,13 @@ class _MyHomePageState extends State<MyHomePage> {
         // Notify for scroll update
         chatStore.notifyScrollUpdate();
 
+        // Clear message context when we get a successful expense
+        _messageContext = [];
+        await storeMessageContextInStorage(_messageContext);
+        developer.log(
+          'Cleared message context after successful expense creation',
+        );
+
         return result;
       } else if (result is Map<String, dynamic> &&
           result.containsKey('expense')) {
@@ -686,6 +825,13 @@ class _MyHomePageState extends State<MyHomePage> {
         storeExpensesInStorage(expenseStore.expenses);
         // Notify for scroll update
         chatStore.notifyScrollUpdate();
+
+        // Clear message context when we get a successful expense
+        _messageContext = [];
+        await storeMessageContextInStorage(_messageContext);
+        developer.log(
+          'Cleared message context after successful expense creation',
+        );
 
         return expense;
       }
@@ -730,11 +876,13 @@ class _MyHomePageState extends State<MyHomePage> {
       // Reset the expense store
       expenseStore.setExpenses(Expenses(List.empty()));
 
-      // Also reset subscription state
+      // Also reset subscription state and message context
       setState(() {
         _isPremium = false;
         _remainingMessages = 0;
         _dailyMessageLimit = 5;
+        _messageContext = []; // Clear message context
+        storeMessageContextInStorage(_messageContext); // Also clear in storage
       });
 
       // Show confirmation
@@ -807,128 +955,97 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Stack(
           children: [
             // Show content even when loading, just add loading indicator on top
-            Column(
-              children: [
-                // Unified budget card combining both date selection and budget info
-                Consumer<BudgetStore>(
-                  builder: (context, budgetStore, _) {
-                    // Calculate budget percentage
-                    double percentUsed = 0.0;
-                    double remaining = 0.0;
-                    double total = expenseStore.expenses.total.toDouble();
+            RefreshIndicator(
+              onRefresh: handlePullToRefresh,
+              child: ListView(
+                children: [
+                  // Unified budget card combining both date selection and budget info
+                  Consumer<BudgetStore>(
+                    builder: (context, budgetStore, _) {
+                      // Calculate budget percentage
+                      double percentUsed = 0.0;
+                      double remaining = 0.0;
+                      double total = expenseStore.expenses.total.toDouble();
 
-                    if (budgetStore.budgetSummary != null) {
-                      // Use the data from the budget summary if available
-                      percentUsed =
-                          budgetStore.budgetSummary!.totalBudget > 0
-                              ? (budgetStore.budgetSummary!.totalSpending /
-                                      budgetStore.budgetSummary!.totalBudget)
-                                  .clamp(0.0, 1.0)
-                              : 0.0;
-                      remaining = budgetStore.budgetSummary!.remainingBudget;
-                    } else if (budgetStore.budget.total > 0) {
-                      // Fall back to the budget configuration if summary is not available
-                      percentUsed = (total / budgetStore.budget.total).clamp(
-                        0.0,
-                        1.0,
-                      );
-                      remaining = budgetStore.budget.total - total;
-                    }
+                      if (budgetStore.budgetSummary != null) {
+                        // Use the data from the budget summary if available
+                        percentUsed =
+                            budgetStore.budgetSummary!.totalBudget > 0
+                                ? (budgetStore.budgetSummary!.totalSpending /
+                                        budgetStore.budgetSummary!.totalBudget)
+                                    .clamp(0.0, 1.0)
+                                : 0.0;
+                        remaining = budgetStore.budgetSummary!.remainingBudget;
+                      } else if (budgetStore.budget.total > 0) {
+                        // Fall back to the budget configuration if summary is not available
+                        percentUsed = (total / budgetStore.budget.total).clamp(
+                          0.0,
+                          1.0,
+                        );
+                        remaining = budgetStore.budget.total - total;
+                      }
 
-                    final percentDisplay =
-                        "${(percentUsed * 100).toStringAsFixed(0)}%";
+                      final percentDisplay =
+                          "${(percentUsed * 100).toStringAsFixed(0)}%";
 
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 16.0,
-                      ),
-                      decoration: NeumorphicBox.decoration(
-                        context: context,
-                        color:
-                            isDark
-                                ? NeumorphicColors.darkCardBackground
-                                : NeumorphicColors.lightCardBackground,
-                        borderRadius: 16.0,
-                        depth: 8.0, // Increased depth for more prominent shadow
-                        intensity: 0.9, // Higher intensity shadow
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16.0),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              (isDark
-                                      ? NeumorphicColors.darkCardBackground
-                                      : NeumorphicColors.lightCardBackground)
-                                  .withOpacity(1.0),
-                              (isDark
-                                  ? NeumorphicColors.darkCardBackground
-                                      .withOpacity(0.9)
-                                  : NeumorphicColors.lightCardBackground
-                                      .withOpacity(0.92)),
-                            ],
-                          ),
-                          border: Border.all(
-                            color:
-                                isDark
-                                    ? Colors.white.withOpacity(0.05)
-                                    : Colors.black.withOpacity(0.03),
-                            width: 0.5,
-                          ),
+                      return Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 16.0,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Budget month and year with edit button
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    fromDate.year == todayDate.year
-                                        ? '${monthFormat.format(fromDate)} month'
-                                        : '${monthAndYearFormat.format(fromDate)} month',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color:
-                                          isDark
-                                              ? NeumorphicColors
-                                                  .darkTextSecondary
-                                              : NeumorphicColors
-                                                  .lightTextSecondary,
-                                    ),
-                                  ),
-
-                                  // Edit budget button
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => const BudgetScreen(),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            isDark
-                                                ? Colors.white.withOpacity(0.1)
-                                                : Colors.black.withOpacity(
-                                                  0.05,
-                                                ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.edit,
-                                        size: 14,
+                        decoration: NeumorphicBox.decoration(
+                          context: context,
+                          color:
+                              isDark
+                                  ? NeumorphicColors.darkCardBackground
+                                  : NeumorphicColors.lightCardBackground,
+                          borderRadius: 16.0,
+                          depth:
+                              8.0, // Increased depth for more prominent shadow
+                          intensity: 0.9, // Higher intensity shadow
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16.0),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                (isDark
+                                        ? NeumorphicColors.darkCardBackground
+                                        : NeumorphicColors.lightCardBackground)
+                                    .withOpacity(1.0),
+                                (isDark
+                                    ? NeumorphicColors.darkCardBackground
+                                        .withOpacity(0.9)
+                                    : NeumorphicColors.lightCardBackground
+                                        .withOpacity(0.92)),
+                              ],
+                            ),
+                            border: Border.all(
+                              color:
+                                  isDark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.03),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Budget month and year with edit button
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      fromDate.year == todayDate.year
+                                          ? '${monthFormat.format(fromDate)} month'
+                                          : '${monthAndYearFormat.format(fromDate)} month',
+                                      style: TextStyle(
+                                        fontSize: 14,
                                         color:
                                             isDark
                                                 ? NeumorphicColors
@@ -937,149 +1054,196 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     .lightTextSecondary,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
 
-                              // Total spent this month
-                              Text(
-                                currencyFormat.format(total),
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      isDark
-                                          ? NeumorphicColors.darkTextPrimary
-                                          : NeumorphicColors.lightTextPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Budget info
-                              Text(
-                                "Monthly Budget",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color:
-                                      isDark
-                                          ? NeumorphicColors.darkTextSecondary
-                                          : NeumorphicColors.lightTextSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-
-                              // Progress bar row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4),
-                                        color:
-                                            isDark
-                                                ? Colors.white.withOpacity(0.1)
-                                                : Colors.black.withOpacity(
-                                                  0.05,
-                                                ),
+                                    // Edit budget button
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    const BudgetScreen(),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              isDark
+                                                  ? Colors.white.withOpacity(
+                                                    0.1,
+                                                  )
+                                                  : Colors.black.withOpacity(
+                                                    0.05,
+                                                  ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.edit,
+                                          size: 14,
+                                          color:
+                                              isDark
+                                                  ? NeumorphicColors
+                                                      .darkTextSecondary
+                                                  : NeumorphicColors
+                                                      .lightTextSecondary,
+                                        ),
                                       ),
-                                      child: FractionallySizedBox(
-                                        widthFactor: percentUsed,
-                                        alignment: Alignment.centerLeft,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                isDark
-                                                    ? NeumorphicColors
-                                                        .darkAccent
-                                                    : NeumorphicColors
-                                                        .lightAccent,
-                                                isDark
-                                                    ? NeumorphicColors
-                                                        .darkSecondaryAccent
-                                                    : NeumorphicColors
-                                                        .lightSecondaryAccent,
-                                              ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+
+                                // Total spent this month
+                                Text(
+                                  currencyFormat.format(total),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        isDark
+                                            ? NeumorphicColors.darkTextPrimary
+                                            : NeumorphicColors.lightTextPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Budget info
+                                Text(
+                                  "Monthly Budget",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color:
+                                        isDark
+                                            ? NeumorphicColors.darkTextSecondary
+                                            : NeumorphicColors
+                                                .lightTextSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+
+                                // Progress bar row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          color:
+                                              isDark
+                                                  ? Colors.white.withOpacity(
+                                                    0.1,
+                                                  )
+                                                  : Colors.black.withOpacity(
+                                                    0.05,
+                                                  ),
+                                        ),
+                                        child: FractionallySizedBox(
+                                          widthFactor: percentUsed,
+                                          alignment: Alignment.centerLeft,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  isDark
+                                                      ? NeumorphicColors
+                                                          .darkAccent
+                                                      : NeumorphicColors
+                                                          .lightAccent,
+                                                  isDark
+                                                      ? NeumorphicColors
+                                                          .darkSecondaryAccent
+                                                      : NeumorphicColors
+                                                          .lightSecondaryAccent,
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    percentDisplay,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          isDark
-                                              ? NeumorphicColors.darkTextPrimary
-                                              : NeumorphicColors
-                                                  .lightTextPrimary,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      percentDisplay,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            isDark
+                                                ? NeumorphicColors
+                                                    .darkTextPrimary
+                                                : NeumorphicColors
+                                                    .lightTextPrimary,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
 
-                              const SizedBox(height: 12),
+                                const SizedBox(height: 12),
 
-                              // Remaining amount
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Remaining",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color:
-                                          isDark
-                                              ? NeumorphicColors.darkTextPrimary
-                                              : NeumorphicColors
-                                                  .lightTextPrimary,
+                                // Remaining amount
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Remaining",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color:
+                                            isDark
+                                                ? NeumorphicColors
+                                                    .darkTextPrimary
+                                                : NeumorphicColors
+                                                    .lightTextPrimary,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    currencyFormat.format(remaining),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          remaining < 0
-                                              ? Colors.red
-                                              : isDark
-                                              ? NeumorphicColors.darkAccent
-                                              : NeumorphicColors.lightAccent,
+                                    Text(
+                                      currencyFormat.format(remaining),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            remaining < 0
+                                                ? Colors.red
+                                                : isDark
+                                                ? NeumorphicColors.darkAccent
+                                                : NeumorphicColors.lightAccent,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-
-                // Tabs section
-                Expanded(
-                  child: BodyTabs(
-                    addExpense,
-                    quotaData: {
-                      'remainingMessages': _remainingMessages,
-                      'dailyLimit': _dailyMessageLimit,
-                      'isPremium': _isPremium,
+                      );
                     },
                   ),
-                ),
-              ],
+
+                  // Tabs section - need to use a SizedBox with a fixed height since ListView doesn't respect Expanded
+                  SizedBox(
+                    height:
+                        MediaQuery.of(context).size.height -
+                        300, // Adjust this value as needed
+                    child: BodyTabs(
+                      addExpense,
+                      quotaData: {
+                        'remainingMessages': _remainingMessages,
+                        'dailyLimit': _dailyMessageLimit,
+                        'isPremium': _isPremium,
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
             // Show loading indicator as overlay
             if (expenseStore.loading)
