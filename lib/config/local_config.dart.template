@@ -1,0 +1,25 @@
+/// Local development configuration template
+/// Copy this file to local_config.dart and replace with your actual values
+class LocalConfig {
+  // API Configuration - Replace with your actual values
+  static const String backendHost = "YOUR_BACKEND_HOST";
+  static const String projectId = "YOUR_PROJECT_ID";
+  
+  // Firebase Web Configuration
+  static const String webApiKey = "YOUR_WEB_API_KEY";
+  static const String webAppId = "YOUR_WEB_APP_ID";
+  static const String messagingSenderId = "YOUR_MESSAGING_SENDER_ID";
+  static const String measurementId = "YOUR_MEASUREMENT_ID";
+  
+  // Firebase Android Configuration
+  static const String androidApiKey = "YOUR_ANDROID_API_KEY";
+  static const String androidAppId = "YOUR_ANDROID_APP_ID";
+  
+  // Firebase iOS Configuration
+  static const String iosApiKey = "YOUR_IOS_API_KEY";
+  static const String iosAppId = "YOUR_IOS_APP_ID";
+  
+  // Firebase macOS Configuration
+  static const String macosApiKey = "YOUR_MACOS_API_KEY";
+  static const String macosAppId = "YOUR_MACOS_APP_ID";
+}

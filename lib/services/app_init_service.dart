@@ -6,9 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/local_config.dart';
 
 // Base API constants
-const host = "backend-2xqnus4dqq-uc.a.run.app";
+const host = LocalConfig.backendHost;
 const URI = Uri.https;
 const URL_PREFIX = "";
 

@@ -957,132 +957,99 @@ class _MyHomePageState extends State<MyHomePage> {
             // Show content even when loading, just add loading indicator on top
             RefreshIndicator(
               onRefresh: handlePullToRefresh,
-              child: ListView(
-                children: [
-                  // Unified budget card combining both date selection and budget info
-                  Consumer<BudgetStore>(
-                    builder: (context, budgetStore, _) {
-                      // Calculate budget percentage
-                      double percentUsed = 0.0;
-                      double remaining = 0.0;
-                      double total = expenseStore.expenses.total.toDouble();
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Unified budget card combining both date selection and budget info
+                    Consumer<BudgetStore>(
+                      builder: (context, budgetStore, _) {
+                        // Calculate budget percentage
+                        double percentUsed = 0.0;
+                        double remaining = 0.0;
+                        double total = expenseStore.expenses.total.toDouble();
 
-                      if (budgetStore.budgetSummary != null) {
-                        // Use the data from the budget summary if available
-                        percentUsed =
-                            budgetStore.budgetSummary!.totalBudget > 0
-                                ? (budgetStore.budgetSummary!.totalSpending /
-                                        budgetStore.budgetSummary!.totalBudget)
-                                    .clamp(0.0, 1.0)
-                                : 0.0;
-                        remaining = budgetStore.budgetSummary!.remainingBudget;
-                      } else if (budgetStore.budget.total > 0) {
-                        // Fall back to the budget configuration if summary is not available
-                        percentUsed = (total / budgetStore.budget.total).clamp(
-                          0.0,
-                          1.0,
-                        );
-                        remaining = budgetStore.budget.total - total;
-                      }
+                        if (budgetStore.budgetSummary != null) {
+                          // Use the data from the budget summary if available
+                          percentUsed =
+                              budgetStore.budgetSummary!.totalBudget > 0
+                                  ? (budgetStore.budgetSummary!.totalSpending /
+                                          budgetStore
+                                              .budgetSummary!
+                                              .totalBudget)
+                                      .clamp(0.0, 1.0)
+                                  : 0.0;
+                          remaining =
+                              budgetStore.budgetSummary!.remainingBudget;
+                        } else if (budgetStore.budget.total > 0) {
+                          // Fall back to the budget configuration if summary is not available
+                          percentUsed = (total / budgetStore.budget.total)
+                              .clamp(0.0, 1.0);
+                          remaining = budgetStore.budget.total - total;
+                        }
 
-                      final percentDisplay =
-                          "${(percentUsed * 100).toStringAsFixed(0)}%";
+                        final percentDisplay =
+                            "${(percentUsed * 100).toStringAsFixed(0)}%";
 
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
-                        ),
-                        decoration: NeumorphicBox.decoration(
-                          context: context,
-                          color:
-                              isDark
-                                  ? NeumorphicColors.darkCardBackground
-                                  : NeumorphicColors.lightCardBackground,
-                          borderRadius: 16.0,
-                          depth:
-                              8.0, // Increased depth for more prominent shadow
-                          intensity: 0.9, // Higher intensity shadow
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16.0),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                (isDark
-                                        ? NeumorphicColors.darkCardBackground
-                                        : NeumorphicColors.lightCardBackground)
-                                    .withOpacity(1.0),
-                                (isDark
-                                    ? NeumorphicColors.darkCardBackground
-                                        .withOpacity(0.9)
-                                    : NeumorphicColors.lightCardBackground
-                                        .withOpacity(0.92)),
-                              ],
-                            ),
-                            border: Border.all(
-                              color:
-                                  isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : Colors.black.withOpacity(0.03),
-                              width: 0.5,
-                            ),
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 16.0,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Budget month and year with edit button
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      fromDate.year == todayDate.year
-                                          ? '${monthFormat.format(fromDate)} month'
-                                          : '${monthAndYearFormat.format(fromDate)} month',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color:
-                                            isDark
-                                                ? NeumorphicColors
-                                                    .darkTextSecondary
-                                                : NeumorphicColors
-                                                    .lightTextSecondary,
-                                      ),
-                                    ),
-
-                                    // Edit budget button
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) =>
-                                                    const BudgetScreen(),
-                                          ),
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              isDark
-                                                  ? Colors.white.withOpacity(
-                                                    0.1,
-                                                  )
-                                                  : Colors.black.withOpacity(
-                                                    0.05,
-                                                  ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.edit,
-                                          size: 14,
+                          decoration: NeumorphicBox.decoration(
+                            context: context,
+                            color:
+                                isDark
+                                    ? NeumorphicColors.darkCardBackground
+                                    : NeumorphicColors.lightCardBackground,
+                            borderRadius: 16.0,
+                            depth:
+                                8.0, // Increased depth for more prominent shadow
+                            intensity: 0.9, // Higher intensity shadow
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16.0),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  (isDark
+                                          ? NeumorphicColors.darkCardBackground
+                                          : NeumorphicColors
+                                              .lightCardBackground)
+                                      .withOpacity(1.0),
+                                  (isDark
+                                      ? NeumorphicColors.darkCardBackground
+                                          .withOpacity(0.9)
+                                      : NeumorphicColors.lightCardBackground
+                                          .withOpacity(0.92)),
+                                ],
+                              ),
+                              border: Border.all(
+                                color:
+                                    isDark
+                                        ? Colors.white.withOpacity(0.05)
+                                        : Colors.black.withOpacity(0.03),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Budget month and year with edit button
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        fromDate.year == todayDate.year
+                                            ? '${monthFormat.format(fromDate)} month'
+                                            : '${monthAndYearFormat.format(fromDate)} month',
+                                        style: TextStyle(
+                                          fontSize: 14,
                                           color:
                                               isDark
                                                   ? NeumorphicColors
@@ -1091,158 +1058,201 @@ class _MyHomePageState extends State<MyHomePage> {
                                                       .lightTextSecondary,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
 
-                                // Total spent this month
-                                Text(
-                                  currencyFormat.format(total),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        isDark
-                                            ? NeumorphicColors.darkTextPrimary
-                                            : NeumorphicColors.lightTextPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Budget info
-                                Text(
-                                  "Monthly Budget",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color:
-                                        isDark
-                                            ? NeumorphicColors.darkTextSecondary
-                                            : NeumorphicColors
-                                                .lightTextSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-
-                                // Progress bar row
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
+                                      // Edit budget button
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      const BudgetScreen(),
+                                            ),
+                                          );
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                isDark
+                                                    ? Colors.white.withOpacity(
+                                                      0.1,
+                                                    )
+                                                    : Colors.black.withOpacity(
+                                                      0.05,
+                                                    ),
+                                            shape: BoxShape.circle,
                                           ),
-                                          color:
-                                              isDark
-                                                  ? Colors.white.withOpacity(
-                                                    0.1,
-                                                  )
-                                                  : Colors.black.withOpacity(
-                                                    0.05,
-                                                  ),
+                                          child: Icon(
+                                            Icons.edit,
+                                            size: 14,
+                                            color:
+                                                isDark
+                                                    ? NeumorphicColors
+                                                        .darkTextSecondary
+                                                    : NeumorphicColors
+                                                        .lightTextSecondary,
+                                          ),
                                         ),
-                                        child: FractionallySizedBox(
-                                          widthFactor: percentUsed,
-                                          alignment: Alignment.centerLeft,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  isDark
-                                                      ? NeumorphicColors
-                                                          .darkAccent
-                                                      : NeumorphicColors
-                                                          .lightAccent,
-                                                  isDark
-                                                      ? NeumorphicColors
-                                                          .darkSecondaryAccent
-                                                      : NeumorphicColors
-                                                          .lightSecondaryAccent,
-                                                ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  // Total spent this month
+                                  Text(
+                                    currencyFormat.format(total),
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          isDark
+                                              ? NeumorphicColors.darkTextPrimary
+                                              : NeumorphicColors
+                                                  .lightTextPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Budget info
+                                  Text(
+                                    "Monthly Budget",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color:
+                                          isDark
+                                              ? NeumorphicColors
+                                                  .darkTextSecondary
+                                              : NeumorphicColors
+                                                  .lightTextSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  // Progress bar row
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                            color:
+                                                isDark
+                                                    ? Colors.white.withOpacity(
+                                                      0.1,
+                                                    )
+                                                    : Colors.black.withOpacity(
+                                                      0.05,
+                                                    ),
+                                          ),
+                                          child: FractionallySizedBox(
+                                            widthFactor: percentUsed,
+                                            alignment: Alignment.centerLeft,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    isDark
+                                                        ? NeumorphicColors
+                                                            .darkAccent
+                                                        : NeumorphicColors
+                                                            .lightAccent,
+                                                    isDark
+                                                        ? NeumorphicColors
+                                                            .darkSecondaryAccent
+                                                        : NeumorphicColors
+                                                            .lightSecondaryAccent,
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      percentDisplay,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            isDark
-                                                ? NeumorphicColors
-                                                    .darkTextPrimary
-                                                : NeumorphicColors
-                                                    .lightTextPrimary,
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        percentDisplay,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color:
+                                              isDark
+                                                  ? NeumorphicColors
+                                                      .darkTextPrimary
+                                                  : NeumorphicColors
+                                                      .lightTextPrimary,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
 
-                                const SizedBox(height: 12),
+                                  const SizedBox(height: 12),
 
-                                // Remaining amount
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "Remaining",
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color:
-                                            isDark
-                                                ? NeumorphicColors
-                                                    .darkTextPrimary
-                                                : NeumorphicColors
-                                                    .lightTextPrimary,
+                                  // Remaining amount
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Remaining",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color:
+                                              isDark
+                                                  ? NeumorphicColors
+                                                      .darkTextPrimary
+                                                  : NeumorphicColors
+                                                      .lightTextPrimary,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      currencyFormat.format(remaining),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            remaining < 0
-                                                ? Colors.red
-                                                : isDark
-                                                ? NeumorphicColors.darkAccent
-                                                : NeumorphicColors.lightAccent,
+                                      Text(
+                                        currencyFormat.format(remaining),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              remaining < 0
+                                                  ? Colors.red
+                                                  : isDark
+                                                  ? NeumorphicColors.darkAccent
+                                                  : NeumorphicColors
+                                                      .lightAccent,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Tabs section - need to use a SizedBox with a fixed height since ListView doesn't respect Expanded
-                  SizedBox(
-                    height:
-                        MediaQuery.of(context).size.height -
-                        300, // Adjust this value as needed
-                    child: BodyTabs(
-                      addExpense,
-                      quotaData: {
-                        'remainingMessages': _remainingMessages,
-                        'dailyLimit': _dailyMessageLimit,
-                        'isPremium': _isPremium,
+                        );
                       },
                     ),
-                  ),
-                ],
+
+                    // Tabs section - use ConstrainedBox for adaptive height
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight:
+                            MediaQuery.of(context).size.height *
+                            0.63, // 63% of screen height
+                      ),
+                      child: BodyTabs(
+                        addExpense,
+                        quotaData: {
+                          'remainingMessages': _remainingMessages,
+                          'dailyLimit': _dailyMessageLimit,
+                          'isPremium': _isPremium,
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             // Show loading indicator as overlay

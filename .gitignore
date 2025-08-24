@@ -45,3 +45,28 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Firebase configuration files (sensitive)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+ios/firebase_app_id_file.json
+macos/firebase_app_id_file.json
+
+# Android signing keys (sensitive)
+android/key.properties
+android/app/release-key
+android/app/*.keystore
+android/app/*.jks
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# API keys and secrets
+**/secrets/
+**/config/secrets.dart
+**/config/api_keys.dart
+lib/config/local_config.dart

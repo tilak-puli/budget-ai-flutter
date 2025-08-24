@@ -3,12 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'config/local_config.dart';
 
-const host = "backend-2xqnus4dqq-uc.a.run.app";
-// const host = "127.0.0.1:5001";
+const host = LocalConfig.backendHost;
+// const host = "127.0.0.1:5001"; // For local development
 const URI = Uri.https;
-// const URI = Uri.http;
-// const URL_PREFIX = "finbud-99269/us-central1/backend";
+// const URI = Uri.http; // For local development
+// const URL_PREFIX = "YOUR_PROJECT_ID/us-central1/backend"; // For Firebase Functions
 const URL_PREFIX = "";
 
 getHeaders() async {

@@ -2,9 +2,10 @@ import 'package:finly/models/expense.dart';
 import "package:collection/collection.dart";
 
 class Expenses {
-  final List<Expense> list;
+  List<Expense> list;
 
-  const Expenses(this.list);
+  // Create a constructor that ensures the list is mutable
+  Expenses(List<Expense> expenses) : list = List<Expense>.from(expenses);
 
   factory Expenses.fromJson(List jsonList) {
     return Expenses(jsonList.map((e) => Expense.fromJson(e)).toList());

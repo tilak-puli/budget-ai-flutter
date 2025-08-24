@@ -342,8 +342,6 @@ class InitializationService {
     // Initialize budget store
     budgetStore.initializeFromAppData(_appInitData!);
 
-    // Initialize expense store
-    expenseStore.initializeFromAppData(_appInitData!);
 
     // Initialize chat store if provided
     // Add chat store initialization here if needed

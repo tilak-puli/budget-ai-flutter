@@ -37,6 +37,8 @@ class _AIMessageInputState extends State<AIMessageInput> {
   bool _isPremium = false;
   bool _isLoading = true;
   bool _isShowingHint = false; // Add flag to track dialog state
+  bool _hintCheckCompleted =
+      false; // Add flag to track if hint check was already done
 
   // Store the free message limit
   static const int _freeMessageLimit = 5;
@@ -56,9 +58,6 @@ class _AIMessageInputState extends State<AIMessageInput> {
         _isPremium = widget.isPremium!;
         _isLoading = false;
       });
-      print(
-        "Using quota data from parent: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium",
-      );
     } else {
       // Only call API if parent didn't provide values
       _loadSubscriptionData();
@@ -89,6 +88,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
   void dispose() {
     // Make sure we cleanup if widget is disposed while dialog is showing
     _isShowingHint = false;
+    _hintCheckCompleted = false;
     _controller.dispose();
     super.dispose();
   }
@@ -111,10 +111,6 @@ class _AIMessageInputState extends State<AIMessageInput> {
             _isLoading = false;
           });
         }
-
-        print(
-          "Using cached quota data: remaining=$_remainingMessages, limit=$_dailyLimit",
-        );
       }
 
       // Then try to get fresh data from server API
@@ -131,13 +127,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
           _isLoading = false;
         });
       }
-
-      print(
-        "Quota status: remaining=$_remainingMessages, limit=$_dailyLimit, isPremium=$_isPremium",
-      );
     } catch (e) {
-      print("Error loading subscription data: $e");
-
       // Fall back to basic local data if server call fails
       final isPremium = await _subscriptionService.isPremium();
       final messageCount =
@@ -174,13 +164,9 @@ class _AIMessageInputState extends State<AIMessageInput> {
           _remainingMessages = remainingQuota;
           _dailyLimit = dailyLimit;
         });
-
-        print(
-          "Updated message input from cache: remaining=$remainingQuota, limit=$dailyLimit",
-        );
       }
     } catch (e) {
-      print("Error updating from cached quota: $e");
+      // Silently handle error
     }
   }
 
@@ -200,9 +186,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
             (context) => CreateExpenseForm(
               onExpenseCreated: (Expense expense) {
                 // Pass expense directly to onAddMessage
-                print(
-                  "Expense created and being passed to onAddMessage: ${expense.id}",
-                );
+
                 widget.onAddMessage(expense);
               },
             ),
@@ -212,14 +196,28 @@ class _AIMessageInputState extends State<AIMessageInput> {
 
   // Check if hint should be shown and show it only once
   Future<void> _checkAndShowHint() async {
-    if (_isShowingHint) return; // Prevent multiple calls
+    // If we already completed the hint check process, don't do it again
+    if (_hintCheckCompleted) {
+      return;
+    }
+
+    if (_isShowingHint) {
+      return; // Prevent multiple calls
+    }
+
+    // Mark that we're starting the hint check process
+    _hintCheckCompleted = true;
 
     final shouldShow = await _shouldShowButtonHint();
+
     if (shouldShow && mounted) {
       _isShowingHint = true;
+
       // Small delay to ensure the widget is fully built
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showButtonHint(context);
+        if (mounted && _isShowingHint) {
+          _showButtonHint(context);
+        }
       });
     }
   }
@@ -393,7 +391,6 @@ class _AIMessageInputState extends State<AIMessageInput> {
       // Return true if hint has not been seen
       return !hasSeenHint;
     } catch (e) {
-      print("Error checking hint preference: $e");
       return false;
     }
   }
@@ -403,98 +400,97 @@ class _AIMessageInputState extends State<AIMessageInput> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_seen_fab_hint', true);
-      print("Marked onboarding hint as seen");
     } catch (e) {
-      print("Error saving hint preference: $e");
-    } finally {
-      // Always reset the flag
-      if (mounted) {
-        setState(() {
-          _isShowingHint = false;
-        });
-      }
+      // Silently handle error
     }
   }
 
   // Show a helpful hint about the buttons
   void _showButtonHint(BuildContext context) async {
     // If already showing, don't show it again
-    if (!mounted || !_isShowingHint) return;
+    if (!mounted || !_isShowingHint) {
+      return;
+    }
 
     await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
+
+    if (!mounted || !_isShowingHint) {
+      return;
+    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor =
         isDark ? NeumorphicColors.darkAccent : NeumorphicColors.lightAccent;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent dismissal by tapping outside
-      builder:
-          (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.lightbulb_outline, color: accentColor),
-                const SizedBox(width: 10),
-                const Text("Quick Expense Entry"),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHintItem(
-                  context,
-                  icon: Icons.chat_outlined,
-                  title: "AI-Powered Expense Entry",
-                  description:
-                      "Simply type what you spent money on and let AI figure out the details.",
-                  example: "\"250 for lunch\"  or  \"1038 face wash\"",
-                ),
-                const SizedBox(height: 16),
-                _buildHintItem(
-                  context,
-                  icon: Icons.add_circle_outline,
-                  title: "Manual Entry",
-                  description:
-                      "Tap the + button to enter expense details manually with categories.",
-                ),
-                const SizedBox(height: 16),
-                _buildHintItem(
-                  context,
-                  icon: Icons.send,
-                  title: "Send Button",
-                  description:
-                      "Tap the send button once you've typed your expense.",
-                ),
-              ],
-            ),
-            actions: [
-              TextButton.icon(
-                icon: Icon(
-                  Icons.check_circle_outline,
-                  color: accentColor,
-                  size: 18,
-                ),
-                label: Text("Got it", style: TextStyle(color: accentColor)),
-                onPressed: () async {
-                  // Save that user has seen the hint
-                  await _markHintAsSeen();
-
-                  if (mounted) Navigator.pop(context);
-                },
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: false, // Prevent dismissal by tapping outside
+        builder:
+            (dialogContext) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, color: accentColor),
+                  const SizedBox(width: 10),
+                  const Text("Quick Expense Entry"),
+                ],
               ),
-            ],
-          ),
-    ).then((_) {
-      // Ensure flag is reset even if dialog is dismissed another way
-      if (mounted) {
-        setState(() {
-          _isShowingHint = false;
-        });
-      }
-    });
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHintItem(
+                    dialogContext,
+                    icon: Icons.chat_outlined,
+                    title: "AI-Powered Expense Entry",
+                    description:
+                        "Simply type what you spent money on and let AI figure out the details.",
+                    example: "\"250 for lunch\"  or  \"1038 face wash\"",
+                  ),
+                  const SizedBox(height: 16),
+                  _buildHintItem(
+                    dialogContext,
+                    icon: Icons.add_circle_outline,
+                    title: "Manual Entry",
+                    description:
+                        "Tap the + button to enter expense details manually with categories.",
+                  ),
+                  const SizedBox(height: 16),
+                  _buildHintItem(
+                    dialogContext,
+                    icon: Icons.send,
+                    title: "Send Button",
+                    description:
+                        "Tap the send button once you've typed your expense.",
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton.icon(
+                  icon: Icon(
+                    Icons.check_circle_outline,
+                    color: accentColor,
+                    size: 18,
+                  ),
+                  label: Text("Got it", style: TextStyle(color: accentColor)),
+                  onPressed: () {
+                    // Dismiss the dialog immediately
+                    Navigator.of(dialogContext).pop();
+
+                    // Reset the flag immediately to prevent re-showing
+                    _isShowingHint = false;
+                  },
+                ),
+              ],
+            ),
+      );
+
+      // Dialog has been dismissed, now save the preference
+      await _markHintAsSeen();
+    } catch (e) {
+      // Make sure flag is reset even if dialog fails
+      _isShowingHint = false;
+    }
   }
 
   // Helper method to build a consistent hint item
@@ -578,9 +574,6 @@ class _AIMessageInputState extends State<AIMessageInput> {
 
   // Centralized logic for determining if send button should be disabled
   bool _isSendButtonDisabled() {
-    print(
-      "isSendButtonDisabled: ${_controller.text.trim().isEmpty} || ${widget.isDisabled} || ${_remainingMessages <= 0}",
-    );
     return widget.isDisabled || _remainingMessages <= 0;
   }
 }

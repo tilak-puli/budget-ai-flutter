@@ -39,31 +39,6 @@ class ExpenseStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Initialize from app init response
-  void initializeFromAppData(AppInitResponse initData) {
-    print("\n------- INITIALIZING EXPENSE STORE FROM APP INIT DATA -------");
-
-    // Update expenses
-    if (initData.expenses.isNotEmpty) {
-      final sortedExpenses = List<Expense>.from(initData.expenses);
-      sortedExpenses.sort((a, b) => b.datetime.compareTo(a.datetime));
-
-      expenses = Expenses(sortedExpenses);
-      storeExpensesInStorage(expenses);
-      print("Initialized ${expenses.list.length} expenses from app init data");
-    }
-
-    // Update date range
-    fromDate = initData.dateRange.fromDate;
-    toDate = initData.dateRange.toDate;
-    print(
-      "Date range set: ${fromDate?.toIso8601String()} to ${toDate?.toIso8601String()}",
-    );
-
-    print("------- EXPENSE STORE INITIALIZATION COMPLETE -------\n");
-    notifyListeners();
-  }
-
   Expenses mergeExpenses(Expenses newExpenses) {
     print("\n------- MERGING EXPENSES -------");
     print("Local expenses count: ${expenses.list.length}");

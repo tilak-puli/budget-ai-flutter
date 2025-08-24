@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'config/local_config.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -44,38 +45,38 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAlZS3G5iMHmCuj2MPLfiqdNuhmud9j4UY',
-    appId: '1:706321535461:web:fb7c10fe0b0f057e8d5f0c',
-    messagingSenderId: '706321535461',
-    projectId: 'finbud-99269',
-    authDomain: 'finbud-99269.firebaseapp.com',
-    storageBucket: 'finbud-99269.appspot.com',
-    measurementId: 'G-FHL3H2R40X',
+    apiKey: LocalConfig.webApiKey,
+    appId: LocalConfig.webAppId,
+    messagingSenderId: LocalConfig.messagingSenderId,
+    projectId: LocalConfig.projectId,
+    authDomain: '${LocalConfig.projectId}.firebaseapp.com',
+    storageBucket: '${LocalConfig.projectId}.appspot.com',
+    measurementId: LocalConfig.measurementId,
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDDE5pRKCtEhOvLL3CMIQb5iozJ2zn19yY',
-    appId: '1:706321535461:android:f9a70db3fd46115b8d5f0c',
-    messagingSenderId: '706321535461',
-    projectId: 'finbud-99269',
-    storageBucket: 'finbud-99269.appspot.com',
+    apiKey: LocalConfig.androidApiKey,
+    appId: LocalConfig.androidAppId,
+    messagingSenderId: LocalConfig.messagingSenderId,
+    projectId: LocalConfig.projectId,
+    storageBucket: '${LocalConfig.projectId}.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAcFy0gZfNh8LOJdBKEAgJl-d-1m4Ot7Lk',
-    appId: '1:706321535461:ios:3410b035e4421dae8d5f0c',
-    messagingSenderId: '706321535461',
-    projectId: 'finbud-99269',
-    storageBucket: 'finbud-99269.appspot.com',
+    apiKey: LocalConfig.iosApiKey,
+    appId: LocalConfig.iosAppId,
+    messagingSenderId: LocalConfig.messagingSenderId,
+    projectId: LocalConfig.projectId,
+    storageBucket: '${LocalConfig.projectId}.appspot.com',
     iosBundleId: 'com.tilakpuli.budgetAi',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAcFy0gZfNh8LOJdBKEAgJl-d-1m4Ot7Lk',
-    appId: '1:706321535461:ios:47d2dc7f69c234d88d5f0c',
-    messagingSenderId: '706321535461',
-    projectId: 'finbud-99269',
-    storageBucket: 'finbud-99269.appspot.com',
+    apiKey: LocalConfig.macosApiKey,
+    appId: LocalConfig.macosAppId,
+    messagingSenderId: LocalConfig.messagingSenderId,
+    projectId: LocalConfig.projectId,
+    storageBucket: '${LocalConfig.projectId}.appspot.com',
     iosBundleId: 'com.tilakpuli.budgetAi.RunnerTests',
   );
 }
